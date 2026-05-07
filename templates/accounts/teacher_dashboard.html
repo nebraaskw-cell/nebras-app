@@ -1,0 +1,104 @@
+<div class="row g-4 mb-4">
+    {% include "components/kpi_card.html" with title="حلقاتي" value=my_circles|length icon="bi-collection" col="6" %}
+    {% include "components/kpi_card.html" with title="الجلسات القادمة" value=upcoming_sessions|length icon="bi-calendar-event" col="6" %}
+</div>
+
+{% if active_sessions %}
+<div class="nebras-card p-4 mb-4 border-success">
+    <h5 class="card-title text-success mb-3"><i class="bi bi-broadcast me-2"></i> الجلسات النشطة حالياً</h5>
+    <div class="list-group list-group-flush">
+        {% for session in active_sessions %}
+        <div class="list-group-item px-0 d-flex justify-content-between align-items-center border-0">
+            <div>
+                <h6 class="mb-1">{{ session.cycle.circle.name_ar }}</h6>
+                <p class="mb-0 small text-muted">{{ session.date|date:"Y-m-d" }} | {{ session.start_time|time:"H:i" }}</p>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-success mark-attendance-btn" data-session-id="{{ session.id }}">
+                    <i class="bi bi-card-checklist"></i> تحضير الطلاب
+                </button>
+                <button class="btn btn-sm btn-outline-danger complete-session-btn" data-session-id="{{ session.id }}">
+                    إنهاء الجلسة
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="nebras-card p-4">
+    <h5 class="card-title mb-4"><i class="bi bi-calendar3 me-2"></i> الجلسات القادمة</h5>
+    {% if upcoming_sessions %}
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>الحلقة</th>
+                        <th>التاريخ</th>
+                        <th>الوقت</th>
+                        <th>الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in upcoming_sessions %}
+                    <tr id="session-row-{{ session.id }}">
+                        <td class="fw-semibold">{{ session.cycle.circle.name_ar }}</td>
+                        <td>{{ session.date|date:"Y-m-d" }}</td>
+                        <td>{{ session.start_time|time:"H:i" }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary start-session-btn" data-session-id="{{ session.id }}">
+                                <i class="bi bi-play-circle"></i> بدء الجلسة
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center text-muted py-4">
+            <i class="bi bi-calendar-x fs-1 mb-2 d-block"></i>
+            <p>لا توجد جلسات قادمة مجدولة.</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="nebras-card p-4 mt-4">
+    <h5 class="card-title mb-4"><i class="bi bi-people me-2"></i> طلبات ربط أولياء الأمور المعلقة لطلابك</h5>
+    {% if pending_parents %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>ولي الأمر</th>
+                        <th>الطالب</th>
+                        <th>التاريخ</th>
+                        <th>ملاحظات</th>
+                        <th>الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in pending_parents %}
+                    <tr id="parent-row-{{ request.id }}">
+                        <td>{{ request.parent.full_name }}</td>
+                        <td>{{ request.student.full_name }}</td>
+                        <td>{{ request.requested_at|date:"Y-m-d" }}</td>
+                        <td>{{ request.notes|default:"-" }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-success approve-parent-btn" data-request-id="{{ request.id }}">
+                                <i class="bi bi-check-lg"></i> قبول
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-check2-all fs-1 mb-3 d-block text-success"></i>
+            <p>لا توجد طلبات ربط معلقة لطلابك.</p>
+        </div>
+    {% endif %}
+</div>

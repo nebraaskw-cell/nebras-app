@@ -1,0 +1,27 @@
+{% extends "base/base.html" %}
+
+{% block title %}حلقات نبراس{% endblock %}
+
+{% block content %}
+<section class="row align-items-center g-4">
+    <div class="col-lg-7">
+        <h1 class="display-6 fw-bold mb-3">Halaqat Nebras - حلقات نبراس لحفظ السنة النبوية</h1>
+        <p class="lead text-secondary mb-4">
+            منصة تعليمية لإدارة حلقات حفظ السنة النبوية في مساجد الكويت.
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-primary" href="{% url 'accounts:student-register' %}">تسجيل طالب</a>
+            <a class="btn btn-outline-secondary" href="{% url 'circles:list' %}">استعراض الحلقات</a>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="bg-white border nebras-card p-4">
+            <h2 class="h5 mb-3">مرحلة البناء الحالية</h2>
+            <p class="text-secondary mb-0">
+                تم تجهيز الأساس: المستخدمون، الأدوار، الحلقات، الدورات، لوحة الإدارة، وواجهات API الأولية.
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}
+

@@ -1,0 +1,233 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./db.sqlite3"
+}
+
+enum UserRole {
+  ADMIN @map("admin")
+  STUDENT @map("student")
+  TEACHER @map("teacher")
+  PARENT @map("parent")
+  VISITOR @map("visitor")
+}
+
+enum RegistrationStatus {
+  PENDING @map("pending")
+  APPROVED @map("approved")
+  REJECTED @map("rejected")
+}
+
+enum Gender {
+  MALE @map("male")
+  FEMALE @map("female")
+}
+
+enum Governorate {
+  CAPITAL @map("capital")
+  HAWALLI @map("hawalli")
+  FARWANIYA @map("farwaniya")
+  MUBARAK_AL_KABEER @map("mubarak_al_kabeer")
+  AHMADI @map("ahmadi")
+  JAHRA @map("jahra")
+}
+
+enum SessionStatus {
+  SCHEDULED @map("scheduled")
+  ACTIVE @map("active")
+  COMPLETED @map("completed")
+  CANCELLED @map("cancelled")
+}
+
+enum CycleStatus {
+  UPCOMING @map("upcoming")
+  ACTIVE @map("active")
+  COMPLETED @map("completed")
+  ARCHIVED @map("archived")
+}
+
+enum EnrollmentStatus {
+  PENDING @map("pending")
+  ACTIVE @map("active")
+  WITHDRAWN @map("withdrawn")
+  COMPLETED @map("completed")
+}
+
+enum AttendanceStatus {
+  PRESENT @map("present")
+  ABSENT @map("absent")
+  LATE @map("late")
+  EXCUSED @map("excused")
+}
+
+enum NotificationType {
+  APPROVAL @map("approval")
+  SESSION_REMINDER @map("session_reminder")
+  CYCLE_UPDATE @map("cycle_update")
+  GENERAL @map("general")
+}
+
+model User {
+  id                    BigInt   @id @default(autoincrement())
+  password              String
+  lastLogin             DateTime? @map("last_login")
+  isSuperuser           Boolean  @map("is_superuser") @default(false)
+  username              String   @unique
+  firstName             String?  @map("first_name")
+  lastName              String?  @map("last_name")
+  isStaff               Boolean  @map("is_staff") @default(false)
+  isActive              Boolean  @map("is_active") @default(true)
+  dateJoined            DateTime @map("date_joined") @default(now())
+  email                 String?  @unique
+  phoneNumber           String?  @unique @map("phone_number")
+  role                  UserRole @default(VISITOR)
+  registrationStatus    RegistrationStatus @map("registration_status") @default(PENDING)
+  gender                Gender?  @map("gender")
+  governorate           Governorate? @map("governorate")
+  approvedAt            DateTime? @map("approved_at")
+  approvedById          BigInt?  @map("approved_by_id")
+  approvedBy            User?    @relation("UserApprovedBy", fields: [approvedById], references: [id])
+  approvedUsers         User[]   @relation("UserApprovedBy")
+  createdAt             DateTime @map("created_at") @default(now())
+  updatedAt             DateTime @map("updated_at") @updatedAt
+  isDeleted             Boolean  @map("is_deleted") @default(false)
+  deletedAt             DateTime? @map("deleted_at")
+
+  enrollments           Enrollment[]
+  assignedCircles       Circle[] @relation("AssignedCircles")
+
+  @@index([role, registrationStatus])
+  @@index([governorate, gender])
+  @@map("accounts_user")
+}
+
+model Circle {
+  id            BigInt   @id @default(autoincrement())
+  createdAt     DateTime @map("created_at") @default(now())
+  updatedAt     DateTime @map("updated_at") @updatedAt
+  isDeleted     Boolean  @map("is_deleted") @default(false)
+  deletedAt     DateTime? @map("deleted_at")
+  name          String   @unique
+  nameAr        String   @map("name_ar") @unique
+  gender        Gender
+  governorate   Governorate
+  mosqueName    String   @map("mosque_name")
+  locationName  String?  @map("location_name")
+  capacity      Int      @default(25)
+  isActive      Boolean  @map("is_active") @default(true)
+  notes         String?
+  teacherId     BigInt?  @map("teacher_id")
+  teacher       User?    @relation("AssignedCircles", fields: [teacherId], references: [id])
+  cycles        Cycle[]
+
+  @@index([governorate, gender, isActive])
+  @@map("circles_circle")
+}
+
+model Cycle {
+  id                        BigInt   @id @default(autoincrement())
+  createdAt                 DateTime @map("created_at") @default(now())
+  updatedAt                 DateTime @map("updated_at") @updatedAt
+  isDeleted                 Boolean  @map("is_deleted") @default(false)
+  deletedAt                 DateTime? @map("deleted_at")
+  title                     String
+  startDate                 DateTime @map("start_date")
+  endDate                   DateTime? @map("end_date")
+  status                    CycleStatus @default(UPCOMING)
+  defaultSessionStartTime   String   @map("default_session_start_time")
+  defaultSessionEndTime     String   @map("default_session_end_time")
+  archivedAt                DateTime? @map("archived_at")
+  notes                     String?
+  circleId                  BigInt   @map("circle_id")
+  circle                    Circle   @relation(fields: [circleId], references: [id])
+  sessions                  Session[]
+  enrollments               Enrollment[]
+
+  @@unique([circleId, title], map: "unique_cycle_title_per_circle")
+  @@index([status, startDate, endDate])
+  @@map("circles_cycle")
+}
+
+model Enrollment {
+  id              BigInt   @id @default(autoincrement())
+  createdAt       DateTime @map("created_at") @default(now())
+  updatedAt       DateTime @map("updated_at") @updatedAt
+  isDeleted       Boolean  @map("is_deleted") @default(false)
+  deletedAt       DateTime? @map("deleted_at")
+  studentId       BigInt   @map("student_id")
+  student         User     @relation(fields: [studentId], references: [id])
+  cycleId         BigInt   @map("cycle_id")
+  cycle           Cycle    @relation(fields: [cycleId], references: [id])
+  enrolledAt      DateTime @map("enrolled_at") @default(now())
+  status          EnrollmentStatus @default(PENDING)
+  approvedById    BigInt?  @map("approved_by_id")
+  approvedBy      User?    @relation("EnrollmentApprovedBy", fields: [approvedById], references: [id])
+  approvedAt      DateTime? @map("approved_at")
+  withdrawnById   BigInt?  @map("withdrawn_by_id")
+  withdrawnBy     User?    @relation("EnrollmentWithdrawnBy", fields: [withdrawnById], references: [id])
+  withdrawnAt     DateTime? @map("withdrawn_at")
+  notes           String?
+
+  @@index([studentId, status])
+  @@index([cycleId, status])
+  @@map("circles_enrollment")
+}
+
+model Session {
+  id              BigInt   @id @default(autoincrement())
+  createdAt       DateTime @map("created_at") @default(now())
+  updatedAt       DateTime @map("updated_at") @updatedAt
+  isDeleted       Boolean  @map("is_deleted") @default(false)
+  deletedAt       DateTime? @map("deleted_at")
+  cycleId         BigInt   @map("cycle_id")
+  cycle           Cycle    @relation(fields: [cycleId], references: [id])
+  title           String?
+  date            DateTime @map("date")
+  startTime       String   @map("start_time")
+  endTime         String   @map("end_time")
+  status          SessionStatus @default(SCHEDULED)
+  startedAt       DateTime? @map("started_at")
+  completedAt     DateTime? @map("completed_at")
+  isAutoGenerated Boolean  @map("is_auto_generated") @default(false)
+  notes           String?
+
+  attendanceRecords AttendanceRecord[]
+
+  @@index([cycleId, date, status])
+  @@map("study_sessions_session")
+}
+
+model AttendanceRecord {
+  id            BigInt   @id @default(autoincrement())
+  sessionId     BigInt   @map("session_id")
+  session       Session  @relation(fields: [sessionId], references: [id])
+  studentId     BigInt   @map("student_id")
+  student       User     @relation(fields: [studentId], references: [id])
+  status        AttendanceStatus @default(ABSENT)
+  markedById    BigInt?  @map("marked_by_id")
+  markedBy      User?    @relation("MarkedBy", fields: [markedById], references: [id])
+  markedAt      DateTime @map("marked_at") @default(now())
+  notes         String?
+
+  @@unique([sessionId, studentId])
+  @@index([sessionId, status])
+  @@index([studentId, markedAt])
+  @@map("attendance_attendancerecord")
+}
+
+model Notification {
+  id            BigInt   @id @default(autoincrement())
+  recipientId   BigInt   @map("recipient_id")
+  recipient     User     @relation(fields: [recipientId], references: [id])
+  type          NotificationType
+  title         String
+  body          String
+  isRead        Boolean  @map("is_read") @default(false)
+  createdAt     DateTime @map("created_at") @default(now())
+
+  @@index([recipientId, isRead])
+  @@map("notifications_notification")
+}

@@ -1,0 +1,89 @@
+{% if registration_status == 'pending' %}
+<div class="alert alert-warning nebras-card d-flex align-items-center mb-4" role="alert">
+    <i class="bi bi-hourglass-split fs-3 me-3"></i>
+    <div>
+        <h5 class="alert-heading mb-1">حسابك قيد المراجعة</h5>
+        <p class="mb-0">تم استلام طلب التسجيل الخاص بك بنجاح. يرجى الانتظار حتى يقوم الإدارة بمراجعته والموافقة عليه.</p>
+    </div>
+</div>
+{% else %}
+
+<div class="nebras-card p-4 mb-4">
+    <h5 class="card-title mb-4"><i class="bi bi-journal-bookmark me-2"></i> التسجيل الحالي</h5>
+    
+    {% if my_enrollment %}
+    <div class="d-flex align-items-center mb-4 p-3 bg-light rounded">
+        <div class="bg-primary text-white rounded p-3 me-3">
+            <i class="bi bi-book fs-2"></i>
+        </div>
+        <div>
+            <h4 class="mb-1 text-primary">{{ my_enrollment.cycle.circle.name_ar }}</h4>
+            <p class="mb-0 text-muted">
+                <i class="bi bi-person-badge"></i> المعلم: {{ my_enrollment.cycle.circle.teacher.full_name }} |
+                <i class="bi bi-geo-alt"></i> {{ my_enrollment.cycle.circle.mosque_name }}
+            </p>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <h6 class="text-muted mb-3">سجل الحضور</h6>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i> حضور: {{ attendance_present|default:"0" }}</span>
+                <span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i> غياب: {{ attendance_absent|default:"0" }}</span>
+            </div>
+            <div class="progress" style="height: 10px;">
+                {% widthratio attendance_present attendance_present|add:attendance_absent 100 as present_pct %}
+                <div class="progress-bar bg-success" role="progressbar" style="width: {{ present_pct|default:'0' }}%"></div>
+                
+                {% widthratio attendance_absent attendance_present|add:attendance_absent 100 as absent_pct %}
+                <div class="progress-bar bg-danger" role="progressbar" style="width: {{ absent_pct|default:'0' }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phase 4: Gamification -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h5 class="card-title mb-4"><i class="bi bi-trophy me-2 text-warning"></i> الإنجازات والجوائز</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="nebras-card bg-warning bg-opacity-10 p-4 text-center border-0">
+                        <div class="h6 text-muted mb-2">رصيد النقاط</div>
+                        <div class="h2 mb-0 fw-bold text-warning">{{ total_points|default:"0" }}</div>
+                        <small class="text-muted">نقطة</small>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="nebras-card p-4 border-0 bg-light bg-opacity-50 h-100">
+                        <h6 class="text-muted mb-3">الأوسمة المستحقة</h6>
+                        <div class="d-flex gap-3 overflow-auto pb-2">
+                            {% for eb in badges %}
+                            <div class="text-center" style="min-width: 80px;">
+                                <div class="bg-white rounded-circle p-2 shadow-sm mb-2 d-inline-block border border-warning">
+                                    {% if eb.badge.image %}
+                                        <img src="{{ eb.badge.image.url }}" width="40" height="40" alt="{{ eb.badge.name }}">
+                                    {% else %}
+                                        <i class="bi bi-award-fill fs-2 text-warning"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="small fw-bold">{{ eb.badge.name }}</div>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted small my-auto">لم يتم الحصول على أي أوسمة بعد. استمر في الحضور والاجتهاد!</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-4">
+        <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
+        <p>لست مسجلاً في أي حلقة حالياً.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endif %}

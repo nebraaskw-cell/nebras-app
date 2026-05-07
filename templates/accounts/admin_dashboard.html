@@ -1,0 +1,91 @@
+<div class="row g-4 mb-4">
+    {% include "components/kpi_card.html" with title="الطلاب قيد الانتظار" value=pending_students|length icon="bi-person-plus" col="4" %}
+    {% include "components/kpi_card.html" with title="الحلقات النشطة" value=active_circles_count icon="bi-collection" col="4" %}
+    {% include "components/kpi_card.html" with title="إجمالي التسجيلات" value=active_enrollments_count icon="bi-people" col="4" %}
+</div>
+
+<div class="nebras-card p-4">
+    <h5 class="card-title mb-4"><i class="bi bi-hourglass-split me-2"></i> طلبات التسجيل المعلقة</h5>
+    {% if pending_students %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>اسم المستخدم</th>
+                        <th>تاريخ التسجيل</th>
+                        <th>الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in pending_students %}
+                    <tr id="student-row-{{ student.id }}">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light rounded-circle p-2 me-3">
+                                    <i class="bi bi-person text-secondary"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold">{{ student.full_name }}</div>
+                                    <div class="small text-muted">{{ student.email }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ student.username }}</td>
+                        <td>{{ student.date_joined|date:"Y-m-d" }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-success approve-btn" data-student-id="{{ student.id }}">
+                                <i class="bi bi-check-lg"></i> قبول
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-check2-all fs-1 mb-3 d-block text-success"></i>
+            <p>لا توجد طلبات معلقة حالياً. كل شيء على ما يرام!</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="nebras-card p-4 mt-4">
+    <h5 class="card-title mb-4"><i class="bi bi-people me-2"></i> طلبات ربط أولياء الأمور المعلقة</h5>
+    {% if pending_parents %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>ولي الأمر</th>
+                        <th>الطالب</th>
+                        <th>التاريخ</th>
+                        <th>ملاحظات</th>
+                        <th>الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in pending_parents %}
+                    <tr id="parent-row-{{ request.id }}">
+                        <td>{{ request.parent.full_name }}</td>
+                        <td>{{ request.student.full_name }}</td>
+                        <td>{{ request.requested_at|date:"Y-m-d" }}</td>
+                        <td>{{ request.notes|default:"-" }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-success approve-parent-btn" data-request-id="{{ request.id }}">
+                                <i class="bi bi-check-lg"></i> قبول
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-check2-all fs-1 mb-3 d-block text-success"></i>
+            <p>لا توجد طلبات ربط معلقة.</p>
+        </div>
+    {% endif %}
+</div>

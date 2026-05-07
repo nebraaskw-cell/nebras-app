@@ -1,0 +1,80 @@
+{% load static %}
+<div class="row g-4">
+    <div class="col-12">
+        <div class="nebras-card p-4">
+            <h4 class="card-title mb-4">بوابة ولي الأمر</h4>
+            
+            {% if not parent_profile %}
+            <div class="alert alert-info">
+                <h5>ربط بحساب طالب</h5>
+                <p>الرجاء إدخال اسم المستخدم الخاص بالطالب لطلب ربط الحساب.</p>
+                <form id="parentLinkForm" onsubmit="requestParentLink(event)">
+                    <div class="mb-3">
+                        <label class="form-label">اسم مستخدم الطالب</label>
+                        <input type="text" class="form-control" id="studentUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ملاحظات (اختياري)</label>
+                        <textarea class="form-control" id="linkNotes" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">إرسال طلب الربط</button>
+                </form>
+            </div>
+            {% elif parent_profile.status == 'pending' %}
+            <div class="alert alert-warning">
+                <h5>طلب الربط قيد المراجعة</h5>
+                <p>لقد قمت بطلب ربط حسابك بالطالب <strong>{{ parent_profile.student.full_name }}</strong>.</p>
+                <p>الرجاء الانتظار حتى يقوم المعلم أو الإدارة بالموافقة على الطلب.</p>
+            </div>
+            {% elif parent_profile.status == 'approved' %}
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5>معلومات الطالب</h5>
+                    <p><strong>الاسم:</strong> {{ student.full_name }}</p>
+                    {% if student_enrollment %}
+                    <p><strong>الحلقة:</strong> {{ student_enrollment.cycle.circle.name_ar }}</p>
+                    <p><strong>المعلم:</strong> {{ student_enrollment.cycle.circle.teacher.full_name }}</p>
+                    {% else %}
+                    <p class="text-muted">الطالب غير مسجل في أي حلقة حالياً.</p>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <h6 class="text-muted mb-2"><i class="bi bi-trophy me-1 text-warning"></i> الإنجازات</h6>
+                        <div class="nebras-card p-3 bg-light border-0">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="fw-bold">رصيد النقاط:</span>
+                                <span class="h4 mb-0 text-warning fw-bold">{{ total_points|default:"0" }}</span>
+                            </div>
+                            <div class="d-flex gap-2 overflow-auto pb-1">
+                                {% for eb in badges %}
+                                <div class="bg-white rounded-circle p-1 shadow-sm border border-warning" title="{{ eb.badge.name }}">
+                                    <i class="bi bi-award-fill text-warning"></i>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row text-center h-100">
+                        <div class="col-6 mb-3">
+                            <div class="stat-card nebras-card h-100 d-flex flex-column justify-content-center">
+                                <div class="stat-value text-success">{{ attendance_present|default:"0" }}</div>
+                                <div class="stat-label">أيام الحضور</div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="stat-card nebras-card h-100 d-flex flex-column justify-content-center">
+                                <div class="stat-value text-danger">{{ attendance_absent|default:"0" }}</div>
+                                <div class="stat-label">أيام الغياب</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/parent_dashboard.js' %}"></script>

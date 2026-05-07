@@ -1,0 +1,11 @@
+<div class="col-md-{{ col|default:'4' }}">
+    <div class="kpi-card h-100">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="kpi-title">{{ title }}</div>
+                <div class="kpi-value">{{ value|default:"0" }}</div>
+            </div>
+            <i class="bi {{ icon|default:'bi-bar-chart' }} fs-2 text-muted"></i>
+        </div>
+    </div>
+</div>

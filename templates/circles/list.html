@@ -1,0 +1,32 @@
+{% extends "base/base.html" %}
+
+{% block title %}الحلقات{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">الحلقات</h1>
+</div>
+<div class="row g-3">
+    {% for circle in circles %}
+        <div class="col-md-6 col-xl-4">
+            <article class="bg-white border nebras-card p-3 h-100">
+                <h2 class="h5">{{ circle.name_ar }}</h2>
+                <p class="text-secondary mb-2">{{ circle.name }}</p>
+                <dl class="mb-0 small">
+                    <dt>المسجد</dt>
+                    <dd>{{ circle.mosque_name }}</dd>
+                    <dt>المحافظة</dt>
+                    <dd>{{ circle.get_governorate_display }}</dd>
+                    <dt>المعلم</dt>
+                    <dd>{{ circle.teacher.full_name|default:"غير محدد" }}</dd>
+                </dl>
+            </article>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="bg-white border nebras-card p-4 text-secondary">لا توجد حلقات مضافة بعد.</div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
