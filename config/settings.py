@@ -34,7 +34,6 @@ INSTALLED_APPS = [
     "apps.study_sessions.apps.StudySessionsConfig",
     "apps.attendance.apps.AttendanceConfig",
     "apps.notifications.apps.NotificationsConfig",
-    "apps.chat.apps.ChatConfig",
     "apps.reports.apps.ReportsConfig",
     "apps.ai_assistant.apps.AiAssistantConfig",
     "apps.ai_evaluation.apps.AiEvaluationConfig",
@@ -153,6 +152,7 @@ REST_FRAMEWORK = {
 }
 
 PUSH_PROVIDER = os.getenv("PUSH_PROVIDER", "log")
+WHATSAPP_PROVIDER = os.getenv("WHATSAPP_PROVIDER", "log")
 
 LOGGING = {
     "version": 1,

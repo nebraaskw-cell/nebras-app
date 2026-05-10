@@ -8,7 +8,6 @@ from apps.accounts import api_urls as accounts_api_urls
 from apps.ai_assistant import api_urls as ai_assistant_api_urls
 from apps.ai_evaluation import api_urls as ai_evaluation_api_urls
 from apps.attendance import api_urls as attendance_api_urls
-from apps.chat import api_urls as chat_api_urls
 from apps.circles import api_urls as circles_api_urls
 from apps.core.views import HealthCheckAPIView, HomeView
 from apps.notifications import api_urls as notifications_api_urls
@@ -32,7 +31,6 @@ urlpatterns = [
         "api/v1/notifications/",
         include((notifications_api_urls.urlpatterns, "notifications-api"), namespace="notifications-api"),
     ),
-    path("api/v1/chat/", include((chat_api_urls.urlpatterns, "chat-api"), namespace="chat-api")),
     path("api/v1/reports/", include((reports_api_urls.urlpatterns, "reports-api"), namespace="reports-api")),
     path(
         "api/v1/ai/assistant/",

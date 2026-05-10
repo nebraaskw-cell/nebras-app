@@ -1,30 +1,31 @@
 {% extends "base/base.html" %}
 
 {% block title %}الحلقات{% endblock %}
+{% block shell_title %}الحلقات{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 mb-0">الحلقات</h1>
-</div>
+{% include "components/page_header.html" with eyebrow="الحلقات" title="الحلقات المتاحة" subtitle="استعرض الحلقات الدائمة ومواقعها والمعلمين المسؤولين عنها." %}
 <div class="row g-3">
     {% for circle in circles %}
         <div class="col-md-6 col-xl-4">
-            <article class="bg-white border nebras-card p-3 h-100">
-                <h2 class="h5">{{ circle.name_ar }}</h2>
-                <p class="text-secondary mb-2">{{ circle.name }}</p>
-                <dl class="mb-0 small">
-                    <dt>المسجد</dt>
-                    <dd>{{ circle.mosque_name }}</dd>
-                    <dt>المحافظة</dt>
-                    <dd>{{ circle.get_governorate_display }}</dd>
-                    <dt>المعلم</dt>
-                    <dd>{{ circle.teacher.full_name|default:"غير محدد" }}</dd>
-                </dl>
+            <article class="nebras-card circle-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                        <h2 class="h5 mb-1">{{ circle.name_ar }}</h2>
+                        <p class="text-secondary mb-0">{{ circle.name }}</p>
+                    </div>
+                    <span class="status-chip active">نشطة</span>
+                </div>
+                <div class="info-list">
+                    <div><i class="bi bi-building"></i><span>{{ circle.mosque_name }}</span></div>
+                    <div><i class="bi bi-geo-alt"></i><span>{{ circle.get_governorate_display }}</span></div>
+                    <div><i class="bi bi-person-badge"></i><span>{{ circle.teacher.full_name|default:"غير محدد" }}</span></div>
+                </div>
             </article>
         </div>
     {% empty %}
         <div class="col-12">
-            <div class="bg-white border nebras-card p-4 text-secondary">لا توجد حلقات مضافة بعد.</div>
+            {% include "components/empty_state.html" with icon="bi-collection" title="لا توجد حلقات بعد" message="عند إضافة الحلقات من لوحة الإدارة ستظهر هنا للزوار والمستخدمين." %}
         </div>
     {% endfor %}
 </div>

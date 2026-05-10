@@ -4,8 +4,10 @@ async function loadCircleReport() {
     showLoading();
     try {
         const res = await fetch(`/api/v1/reports/circles/${id}/`);
+        if (!res.ok) throw new Error("request_failed");
         const data = await res.json();
         renderCircleReport(data);
+        setExportButtonState("circleExportBtn", true);
     } catch (_err) {
         showError("فشل في تحميل تقرير الحلقة");
     }
@@ -17,11 +19,18 @@ async function loadStudentReport(directId) {
     showLoading();
     try {
         const res = await fetch(`/api/v1/reports/students/${id}/`);
+        if (!res.ok) throw new Error("request_failed");
         const data = await res.json();
         renderStudentReport(data);
+        setExportButtonState("studentExportBtn", true);
     } catch (_err) {
         showError("فشل في تحميل تقرير الطالب");
     }
+}
+
+function loadParentStudentReport() {
+    const id = document.getElementById("parentStudentSelect")?.value;
+    return loadStudentReport(id);
 }
 
 async function loadAnalytics() {
@@ -30,11 +39,42 @@ async function loadAnalytics() {
     showLoading();
     try {
         const res = await fetch(`/api/v1/reports/analytics/registrations/?from=${from}&to=${to}`);
+        if (!res.ok) throw new Error("request_failed");
         const data = await res.json();
         renderAnalyticsReport(data);
     } catch (_err) {
         showError("فشل في تحميل الإحصائيات");
     }
+}
+
+function exportCircleReport() {
+    const id = document.getElementById("circleSelect")?.value;
+    if (id) window.location.href = `/api/v1/reports/circles/${id}/excel/`;
+}
+
+function exportStudentReport(directId) {
+    const id = directId || document.getElementById("studentSelect")?.value;
+    if (id) window.location.href = `/api/v1/reports/students/${id}/excel/`;
+}
+
+function exportParentStudentReport() {
+    const id = document.getElementById("parentStudentSelect")?.value;
+    return exportStudentReport(id);
+}
+
+function exportAnalytics() {
+    const from = document.getElementById("fromDate")?.value || "";
+    const to = document.getElementById("toDate")?.value || "";
+    const params = new URLSearchParams();
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+    const query = params.toString();
+    window.location.href = `/api/v1/reports/analytics/registrations/excel/${query ? `?${query}` : ""}`;
+}
+
+function setExportButtonState(id, enabled) {
+    const button = document.getElementById(id);
+    if (button) button.disabled = !enabled;
 }
 
 function showLoading() {
@@ -102,3 +142,12 @@ function renderAnalyticsReport(data) {
     `;
     content.classList.remove("d-none");
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("circleSelect")?.addEventListener("change", () => {
+        setExportButtonState("circleExportBtn", Boolean(document.getElementById("circleSelect")?.value));
+    });
+    document.getElementById("studentSelect")?.addEventListener("change", () => {
+        setExportButtonState("studentExportBtn", Boolean(document.getElementById("studentSelect")?.value));
+    });
+});

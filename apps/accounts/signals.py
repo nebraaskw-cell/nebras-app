@@ -43,3 +43,10 @@ def on_user_approved(sender, instance, created, **kwargs):
             "يمكنك الآن تسجيل الدخول والانضمام إلى حلقتك."
         ),
     )
+
+    if instance.role == User.Roles.STUDENT:
+        from apps.notifications.services.whatsapp_service import (
+            send_student_approval_confirmation,
+        )
+
+        send_student_approval_confirmation(instance)

@@ -2,7 +2,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from .models import User, ParentProfile
-from .services import registration_service
+from .services import parent_service, registration_service
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -95,12 +95,11 @@ class ParentProfileRequestSerializer(serializers.Serializer):
         student = validated_data['student_username']
         notes = validated_data.get('notes', '')
 
-        # Check if already linked
-        if ParentProfile.objects.filter(parent=parent, student=student).exists():
-            raise serializers.ValidationError("A link request already exists for this student.")
-
-        return ParentProfile.objects.create(
-            parent=parent,
-            student=student,
-            notes=notes
-        )
+        try:
+            return parent_service.request_parent_linking(
+                parent=parent,
+                student=student,
+                notes=notes,
+            )
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc)) from exc

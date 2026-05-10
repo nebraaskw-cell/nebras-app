@@ -1,12 +1,13 @@
 {% extends "base/base.html" %}
 
 {% block title %}الدورات{% endblock %}
+{% block shell_title %}الدورات{% endblock %}
 
 {% block content %}
-<div class="bg-white border nebras-card p-4">
-    <h1 class="h4 mb-3">الدورات</h1>
+{% include "components/page_header.html" with eyebrow="الدورات" title="دورات الحلقات" subtitle="كل دورة تمتد ثلاثة أشهر وترتبط بحلقة دائمة." %}
+<div class="nebras-card p-4">
     <div class="table-responsive">
-        <table class="table align-middle">
+        <table class="table table-soft align-middle">
             <thead>
             <tr>
                 <th>الدورة</th>
@@ -24,12 +25,14 @@
                     <td>{{ cycle.circle.name_ar }}</td>
                     <td>{{ cycle.start_date }}</td>
                     <td>{{ cycle.end_date }}</td>
-                    <td>{{ cycle.get_status_display }}</td>
+                    <td><span class="status-chip {{ cycle.status }}">{{ cycle.get_status_display }}</span></td>
                     <td>{{ cycle.default_session_start_time }} - {{ cycle.default_session_end_time }}</td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td class="text-secondary" colspan="6">لا توجد دورات مضافة بعد.</td>
+                    <td colspan="6">
+                        {% include "components/empty_state.html" with icon="bi-calendar2-x" title="لا توجد دورات بعد" message="ستظهر الدورات هنا بعد إنشائها من لوحة الإدارة." %}
+                    </td>
                 </tr>
             {% endfor %}
             </tbody>

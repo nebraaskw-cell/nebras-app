@@ -7,13 +7,15 @@ The platform is split into modular Django apps:
 - `apps.circles`: permanent circles and three-month cycles.
 - `apps.study_sessions`: implemented session lifecycle and scheduling workflows.
 - `apps.attendance`: implemented attendance tracking and summaries.
-- `apps.notifications`: implemented in-app notification orchestration with push boundary.
-- `apps.chat`: implemented room/message domain with API endpoints.
-- `apps.reports`: implemented reporting APIs and dashboard template.
+- `apps.notifications`: implemented in-app notification orchestration with push and WhatsApp provider boundaries.
+- `apps.reports`: implemented reporting APIs, dashboard template, and Excel-compatible exports.
 - `apps.gamification`: implemented points, badges, and reward tracking.
 - `apps.logs`: implemented audit logging signals and storage.
 - `apps.ai_assistant`: AI integration boundary and scaffolding.
 - `apps.ai_evaluation`: AI recitation evaluation boundary and scaffolding.
+
+Chat was removed from the active application surface and codebase because it is no
+longer part of the product direction.
 
 Current implementation status is beyond Phase 1 and includes delivered features from Phases 2-4.
 The current engineering focus is production hardening: reliability, test coverage, observability,

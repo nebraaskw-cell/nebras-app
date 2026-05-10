@@ -1,79 +1,158 @@
 {% load static %}
+
 <div class="row g-4">
-    <div class="col-12">
-        <div class="nebras-card p-4">
-            <h4 class="card-title mb-4">بوابة ولي الأمر</h4>
-            
-            {% if not parent_profile %}
-            <div class="alert alert-info">
-                <h5>ربط بحساب طالب</h5>
-                <p>الرجاء إدخال اسم المستخدم الخاص بالطالب لطلب ربط الحساب.</p>
-                <form id="parentLinkForm" onsubmit="requestParentLink(event)">
-                    <div class="mb-3">
+    <div class="col-12 col-xl-4">
+        <section class="nebras-card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+                <div>
+                    <p class="text-muted small mb-1">بوابة ولي الأمر</p>
+                    <h4 class="card-title mb-0">ربط ومتابعة الأبناء</h4>
+                </div>
+                <span class="status-badge bg-primary-subtle text-primary">
+                    {{ parent_profiles|length }}/3
+                </span>
+            </div>
+
+            <p class="text-muted mb-4">
+                يمكنك ربط حسابك بما يصل إلى ثلاثة طلاب، وبعد الموافقة تظهر لك
+                بيانات الحضور والنقاط والتقارير لكل طالب.
+            </p>
+
+            {% if can_request_parent_link %}
+                <form id="parentLinkForm" class="vstack gap-3" onsubmit="requestParentLink(event)">
+                    <div id="parentLinkFeedback" class="d-none"></div>
+                    <div>
                         <label class="form-label">اسم مستخدم الطالب</label>
                         <input type="text" class="form-control" id="studentUsername" required>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">ملاحظات (اختياري)</label>
-                        <textarea class="form-control" id="linkNotes" rows="2"></textarea>
+                    <div>
+                        <label class="form-label">ملاحظات اختيارية</label>
+                        <textarea class="form-control" id="linkNotes" rows="3"></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary">إرسال طلب الربط</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-link-45deg"></i>
+                        إرسال طلب الربط
+                    </button>
                 </form>
-            </div>
-            {% elif parent_profile.status == 'pending' %}
-            <div class="alert alert-warning">
-                <h5>طلب الربط قيد المراجعة</h5>
-                <p>لقد قمت بطلب ربط حسابك بالطالب <strong>{{ parent_profile.student.full_name }}</strong>.</p>
-                <p>الرجاء الانتظار حتى يقوم المعلم أو الإدارة بالموافقة على الطلب.</p>
-            </div>
-            {% elif parent_profile.status == 'approved' %}
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <h5>معلومات الطالب</h5>
-                    <p><strong>الاسم:</strong> {{ student.full_name }}</p>
-                    {% if student_enrollment %}
-                    <p><strong>الحلقة:</strong> {{ student_enrollment.cycle.circle.name_ar }}</p>
-                    <p><strong>المعلم:</strong> {{ student_enrollment.cycle.circle.teacher.full_name }}</p>
-                    {% else %}
-                    <p class="text-muted">الطالب غير مسجل في أي حلقة حالياً.</p>
-                    {% endif %}
-                    
-                    <div class="mt-4">
-                        <h6 class="text-muted mb-2"><i class="bi bi-trophy me-1 text-warning"></i> الإنجازات</h6>
-                        <div class="nebras-card p-3 bg-light border-0">
-                            <div class="d-flex align-items-center justify-content-between mb-3">
-                                <span class="fw-bold">رصيد النقاط:</span>
-                                <span class="h4 mb-0 text-warning fw-bold">{{ total_points|default:"0" }}</span>
-                            </div>
-                            <div class="d-flex gap-2 overflow-auto pb-1">
-                                {% for eb in badges %}
-                                <div class="bg-white rounded-circle p-1 shadow-sm border border-warning" title="{{ eb.badge.name }}">
-                                    <i class="bi bi-award-fill text-warning"></i>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
+            {% else %}
+                <div class="alert alert-info mb-0">
+                    وصلت إلى الحد الأعلى لربط الطلاب لهذا الحساب.
                 </div>
-                <div class="col-md-6">
-                    <div class="row text-center h-100">
-                        <div class="col-6 mb-3">
-                            <div class="stat-card nebras-card h-100 d-flex flex-column justify-content-center">
-                                <div class="stat-value text-success">{{ attendance_present|default:"0" }}</div>
-                                <div class="stat-label">أيام الحضور</div>
-                            </div>
-                        </div>
-                        <div class="col-6 mb-3">
-                            <div class="stat-card nebras-card h-100 d-flex flex-column justify-content-center">
-                                <div class="stat-value text-danger">{{ attendance_absent|default:"0" }}</div>
-                                <div class="stat-label">أيام الغياب</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
             {% endif %}
-        </div>
+        </section>
+    </div>
+
+    <div class="col-12 col-xl-8">
+        <section class="nebras-card p-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+                <div>
+                    <p class="text-muted small mb-1">المتابعة اليومية</p>
+                    <h4 class="card-title mb-0">الطلاب المرتبطون</h4>
+                </div>
+            </div>
+
+            {% if linked_students %}
+                <div class="row g-3">
+                    {% for item in linked_students %}
+                        <div class="col-12">
+                            <div class="student-summary-panel">
+                                <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                                    <div>
+                                        <h5 class="mb-1">{{ item.student.full_name }}</h5>
+                                        {% if item.enrollment %}
+                                            <p class="text-muted mb-0">
+                                                {{ item.enrollment.cycle.circle.name_ar }}
+                                                <span class="mx-1">•</span>
+                                                {{ item.enrollment.cycle.circle.teacher.full_name }}
+                                            </p>
+                                        {% else %}
+                                            <p class="text-muted mb-0">لا يوجد تسجيل نشط حالياً.</p>
+                                        {% endif %}
+                                    </div>
+                                    <span class="status-badge bg-success-subtle text-success">معتمد</span>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-6 col-lg-3">
+                                        <div class="mini-metric">
+                                            <span>الحضور</span>
+                                            <strong class="text-success">{{ item.attendance_present }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-lg-3">
+                                        <div class="mini-metric">
+                                            <span>الغياب</span>
+                                            <strong class="text-danger">{{ item.attendance_absent }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-lg-3">
+                                        <div class="mini-metric">
+                                            <span>النقاط</span>
+                                            <strong class="text-warning">{{ item.total_points }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-lg-3">
+                                        <a class="mini-metric text-decoration-none" href="{% url 'reports:dashboard' %}">
+                                            <span>التقرير</span>
+                                            <strong><i class="bi bi-arrow-left-short"></i></strong>
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex gap-2 overflow-auto mt-3 pb-1">
+                                    {% for eb in item.badges %}
+                                        <span class="achievement-dot" title="{{ eb.badge.name }}">
+                                            <i class="bi bi-award-fill"></i>
+                                        </span>
+                                    {% empty %}
+                                        <span class="text-muted small">لم يحصل الطالب على أوسمة بعد.</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-person-hearts fs-1 mb-3 d-block"></i>
+                    <p class="mb-0">لا يوجد طلاب معتمدون بعد. أرسل طلب ربط وانتظر موافقة الإدارة أو المعلم.</p>
+                </div>
+            {% endif %}
+
+            {% if parent_profiles %}
+                <div class="mt-4">
+                    <h6 class="text-muted mb-3">حالة طلبات الربط</h6>
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>الطالب</th>
+                                    <th>الحالة</th>
+                                    <th>تاريخ الطلب</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for profile in parent_profiles %}
+                                    <tr>
+                                        <td>{{ profile.student.full_name }}</td>
+                                        <td>
+                                            {% if profile.status == "approved" %}
+                                                <span class="status-badge bg-success-subtle text-success">معتمد</span>
+                                            {% elif profile.status == "pending" %}
+                                                <span class="status-badge bg-warning-subtle text-warning">قيد المراجعة</span>
+                                            {% else %}
+                                                <span class="status-badge bg-danger-subtle text-danger">مرفوض</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ profile.requested_at|date:"Y-m-d" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+        </section>
     </div>
 </div>
 

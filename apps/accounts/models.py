@@ -100,7 +100,7 @@ class ParentProfile(models.Model):
     Created as PENDING when parent requests linking.
     Approved by admin or the teacher of the student's circle.
     One parent per student (enforced via partial unique constraint).
-    One student per parent (enforced via OneToOneField on parent).
+    A parent account can be linked to up to three students (enforced in service).
     """
 
     class Status(models.TextChoices):
@@ -108,10 +108,10 @@ class ParentProfile(models.Model):
         APPROVED = "approved", "Approved"
         REJECTED = "rejected", "Rejected"
 
-    parent = models.OneToOneField(
+    parent = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="parent_profile",
+        related_name="linked_student_profiles",
         limit_choices_to={"role": "parent"},
     )
     student = models.ForeignKey(

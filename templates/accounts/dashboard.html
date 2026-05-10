@@ -2,21 +2,11 @@
 {% load static %}
 
 {% block title %}لوحة التحكم{% endblock %}
+{% block shell_title %}لوحة التحكم{% endblock %}
 
 {% block content %}
-<div class="nebras-card p-4 mb-4 alert-premium">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-        <div>
-            <h2 class="h3 mb-1 fw-bold section-title">مرحباً بك، {{ request.user.full_name }}</h2>
-            <p class="text-muted mt-1 mb-0">لوحة قيادة {{ role|title }}</p>
-        </div>
-        <div class="d-flex gap-2">
-            <a class="btn btn-outline-primary btn-sm" href="{% url 'reports:dashboard' %}">التقارير</a>
-            <a class="btn btn-accent btn-sm" href="{% url 'chat:interface' %}">المحادثات</a>
-        </div>
-    </div>
-    {% csrf_token %}
-</div>
+{% include "components/page_header.html" with eyebrow="لوحة العمل" title="مرحباً بك، "|add:request.user.full_name subtitle="تابع أهم المهام والأنشطة حسب دورك في المنصة." %}
+{% csrf_token %}
 
 {% if role == 'admin' %}
     {% include "accounts/admin_dashboard.html" %}

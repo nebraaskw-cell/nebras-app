@@ -72,23 +72,50 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             context["badges"] = EarnedBadge.objects.filter(student=user).select_related('badge')
 
         elif user.role == User.Roles.PARENT:
-            parent_profile = ParentProfile.objects.filter(parent=user).first()
-            context["parent_profile"] = parent_profile
-            if parent_profile and parent_profile.status == ParentProfile.Status.APPROVED:
-                student = parent_profile.student
-                enrollment = Enrollment.objects.filter(student=student, status="active").select_related("cycle__circle").first()
-                context["student"] = student
-                context["student_enrollment"] = enrollment
-                if enrollment:
-                    records = AttendanceRecord.objects.filter(student=student)
-                    context["attendance_present"] = records.filter(status="present").count()
-                    context["attendance_absent"] = records.filter(status="absent").count()
+            parent_profiles = (
+                ParentProfile.objects
+                .filter(parent=user)
+                .select_related("student")
+                .order_by("-requested_at")
+            )
+            active_link_count = parent_profiles.filter(
+                status__in=[
+                    ParentProfile.Status.PENDING,
+                    ParentProfile.Status.APPROVED,
+                ]
+            ).count()
+            context["parent_profiles"] = parent_profiles
+            context["parent_profile"] = parent_profiles.first()
+            context["can_request_parent_link"] = active_link_count < 3
 
-                # Phase 4 Gamification
-                from apps.gamification.services.gamification_service import get_total_points
-                from apps.gamification.models import EarnedBadge
-                context["total_points"] = get_total_points(student)
-                context["badges"] = EarnedBadge.objects.filter(student=student).select_related('badge')
+            approved_profiles = parent_profiles.filter(
+                status=ParentProfile.Status.APPROVED
+            )
+            linked_students = []
+
+            from apps.gamification.services.gamification_service import get_total_points
+            from apps.gamification.models import EarnedBadge
+
+            for profile in approved_profiles:
+                student = profile.student
+                enrollment = (
+                    Enrollment.objects
+                    .filter(student=student, status="active")
+                    .select_related("cycle__circle__teacher")
+                    .first()
+                )
+                records = AttendanceRecord.objects.filter(student=student)
+                linked_students.append({
+                    "profile": profile,
+                    "student": student,
+                    "enrollment": enrollment,
+                    "attendance_present": records.filter(status="present").count(),
+                    "attendance_absent": records.filter(status="absent").count(),
+                    "total_points": get_total_points(student),
+                    "badges": EarnedBadge.objects.filter(student=student).select_related("badge"),
+                })
+
+            context["linked_students"] = linked_students
 
         return context
 

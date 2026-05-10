@@ -5,7 +5,9 @@
                 <div class="kpi-title">{{ title }}</div>
                 <div class="kpi-value">{{ value|default:"0" }}</div>
             </div>
-            <i class="bi {{ icon|default:'bi-bar-chart' }} fs-2 text-muted"></i>
+            <div class="kpi-icon">
+                <i class="bi {{ icon|default:'bi-bar-chart' }}"></i>
+            </div>
         </div>
     </div>
 </div>
