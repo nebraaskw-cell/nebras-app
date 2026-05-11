@@ -97,3 +97,15 @@ class EnrollStudentSerializer(serializers.Serializer):
     cycle_id = serializers.IntegerField()
 
 
+class StudentEnrollSerializer(serializers.Serializer):
+    """Write serializer for students to enroll themselves in a cycle."""
+
+    cycle_id = serializers.IntegerField()
+
+
+class RemoveEnrollmentSerializer(serializers.Serializer):
+    """Write serializer for removing a student enrollment with reason."""
+
+    reason = serializers.CharField(max_length=500)
+
+

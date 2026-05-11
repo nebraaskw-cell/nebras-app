@@ -21,6 +21,26 @@
                     <div><i class="bi bi-geo-alt"></i><span>{{ circle.get_governorate_display }}</span></div>
                     <div><i class="bi bi-person-badge"></i><span>{{ circle.teacher.full_name|default:"غير محدد" }}</span></div>
                 </div>
+                {% if circle.active_cycles %}
+                    <div class="mt-3">
+                        <h6 class="text-muted mb-2">الدورات النشطة:</h6>
+                        <div class="d-flex flex-column gap-2">
+                            {% for cycle in circle.active_cycles %}
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                                    <div>
+                                        <strong>{{ cycle.title }}</strong>
+                                        <small class="d-block text-muted">{{ cycle.start_date }} - {{ cycle.end_date }}</small>
+                                    </div>
+                                    {% if user.is_authenticated and user.role == 'student' and user.registration_status == 'approved' %}
+                                        <button class="btn btn-sm btn-primary enroll-btn" data-cycle-id="{{ cycle.id }}">
+                                            <i class="bi bi-plus-circle"></i> التسجيل
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
             </article>
         </div>
     {% empty %}
@@ -29,5 +49,38 @@
         </div>
     {% endfor %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.enroll-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const cycleId = this.dataset.cycleId;
+            if (confirm('هل تريد التسجيل في هذه الدورة؟')) {
+                fetch('/api/v1/circles/enrollments/student_enroll/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ cycle_id: cycleId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.detail) {
+                        alert(data.detail);
+                    } else {
+                        alert('تم التسجيل بنجاح! انتظر موافقة المعلم.');
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('حدث خطأ أثناء التسجيل.');
+                });
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
 

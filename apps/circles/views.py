@@ -1,10 +1,11 @@
+from django.db import models
 from django.views.generic import ListView
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.accounts.models import User
-from apps.core.permissions import IsAdminOrTeacher, ReadOnlyOrAdminRole
+from apps.core.permissions import IsAdminOrTeacher, IsApprovedUser, IsStudentRole, ReadOnlyOrAdminRole
 
 from .models import Circle, Cycle, Enrollment
 from .serializers import (
@@ -12,6 +13,8 @@ from .serializers import (
     CycleSerializer,
     EnrollmentSerializer,
     EnrollStudentSerializer,
+    RemoveEnrollmentSerializer,
+    StudentEnrollSerializer,
 )
 from .services import enrollment_service, query_service
 
@@ -23,7 +26,13 @@ class CircleListView(ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        return query_service.get_active_circles()
+        return query_service.get_active_circles().prefetch_related(
+            models.Prefetch(
+                'cycles',
+                queryset=Cycle.objects.filter(status=Cycle.Status.ACTIVE),
+                to_attr='active_cycles'
+            )
+        )
 
 
 class CycleListView(ListView):
@@ -33,7 +42,11 @@ class CycleListView(ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        return query_service.get_cycles()
+        queryset = query_service.get_cycles()
+        user = self.request.user
+        if user.is_authenticated and user.role == User.Roles.STUDENT:
+            queryset = queryset.filter(status=Cycle.Status.ACTIVE)
+        return queryset
 
 
 class CircleViewSet(viewsets.ModelViewSet):
@@ -55,7 +68,11 @@ class CycleViewSet(viewsets.ModelViewSet):
     ordering_fields = ["start_date", "end_date", "status", "created_at"]
 
     def get_queryset(self):
-        return query_service.get_cycles()
+        queryset = query_service.get_cycles()
+        user = self.request.user
+        if user.is_authenticated and user.role == User.Roles.STUDENT:
+            queryset = queryset.filter(status=Cycle.Status.ACTIVE)
+        return queryset
 
     @action(detail=True, methods=["post"], permission_classes=[ReadOnlyOrAdminRole])
     def archive(self, request, pk=None):
@@ -152,6 +169,61 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
         enrollment = self.get_object()
         try:
             enrollment_service.withdraw_enrollment(enrollment, withdrawn_by=request.user)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(EnrollmentSerializer(enrollment).data)
+
+    @action(detail=False, methods=["post"], permission_classes=[IsApprovedUser, IsStudentRole])
+    def student_enroll(self, request):
+        """Students can enroll themselves in an active cycle."""
+        serializer = StudentEnrollSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            cycle = Cycle.objects.get(pk=serializer.validated_data["cycle_id"])
+        except Cycle.DoesNotExist:
+            return Response(
+                {"detail": "Cycle not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            enrollment = enrollment_service.enroll_student(
+                student=request.user,
+                cycle=cycle,
+                enrolled_by=request.user,
+            )
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            EnrollmentSerializer(enrollment).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=True, methods=["post"])
+    def remove(self, request, pk=None):
+        """Remove a student from enrollment with reason. Admin/teacher only."""
+        enrollment = self.get_object()
+        serializer = RemoveEnrollmentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Check if teacher is assigned to the circle
+        if (
+            request.user.role == User.Roles.TEACHER
+            and enrollment.cycle.circle.teacher != request.user
+        ):
+            return Response(
+                {"detail": "You can only remove students from your assigned circle."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            enrollment_service.remove_enrollment(
+                enrollment=enrollment,
+                removed_by=request.user,
+                reason=serializer.validated_data["reason"],
+            )
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(EnrollmentSerializer(enrollment).data)

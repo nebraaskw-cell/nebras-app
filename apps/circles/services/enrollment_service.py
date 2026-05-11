@@ -96,6 +96,24 @@ def withdraw_enrollment(enrollment, withdrawn_by):
     return enrollment
 
 
+def remove_enrollment(enrollment, removed_by, reason):
+    """
+    Removes a student from enrollment with reason.
+    Similar to withdraw but records removal reason.
+
+    Returns the updated Enrollment instance.
+    """
+    now = timezone.now()
+    enrollment.status = Enrollment.Status.WITHDRAWN
+    enrollment.withdrawn_by = removed_by
+    enrollment.withdrawn_at = now
+    enrollment.removal_reason = reason
+    enrollment.save(
+        update_fields=["status", "withdrawn_by", "withdrawn_at", "removal_reason", "updated_at"]
+    )
+    return enrollment
+
+
 def complete_enrollment(enrollment):
     """
     Transitions an ACTIVE enrollment to COMPLETED at cycle end.

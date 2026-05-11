@@ -16,6 +16,7 @@
                 <th>النهاية</th>
                 <th>الحالة</th>
                 <th>وقت الجلسة الافتراضي</th>
+                <th>الإجراءات</th>
             </tr>
             </thead>
             <tbody>
@@ -27,10 +28,17 @@
                     <td>{{ cycle.end_date }}</td>
                     <td><span class="status-chip {{ cycle.status }}">{{ cycle.get_status_display }}</span></td>
                     <td>{{ cycle.default_session_start_time }} - {{ cycle.default_session_end_time }}</td>
+                    <td>
+                        {% if user.is_authenticated and user.role == 'student' and user.registration_status == 'approved' and cycle.status == 'active' %}
+                            <button class="btn btn-sm btn-primary enroll-btn" data-cycle-id="{{ cycle.id }}">
+                                <i class="bi bi-plus-circle"></i> التسجيل
+                            </button>
+                        {% endif %}
+                    </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="6">
+                    <td colspan="7">
                         {% include "components/empty_state.html" with icon="bi-calendar2-x" title="لا توجد دورات بعد" message="ستظهر الدورات هنا بعد إنشائها من لوحة الإدارة." %}
                     </td>
                 </tr>

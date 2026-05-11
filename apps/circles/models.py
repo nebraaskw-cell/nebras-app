@@ -160,6 +160,9 @@ class Enrollment(SoftDeleteModel):
     )
     withdrawn_at = models.DateTimeField(blank=True, null=True)
 
+    # Removal audit trail (for teacher/admin removal)
+    removal_reason = models.TextField(blank=True)
+
     notes = models.TextField(blank=True)
 
     class Meta:
