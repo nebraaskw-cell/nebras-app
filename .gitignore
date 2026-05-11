@@ -9,4 +9,8 @@ staticfiles/
 .mypy_cache/
 .coverage
 htmlcov/
-
+# Generated / local files
+backups/
+staticfiles/
+media/
+db.sqlite3
