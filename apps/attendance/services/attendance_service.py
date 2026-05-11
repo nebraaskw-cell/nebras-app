@@ -1,6 +1,12 @@
+import logging
+
+from django.db.models import Count, Q
+
 from apps.attendance.models import AttendanceRecord
 from apps.circles.models import Enrollment
 from apps.study_sessions.models import Session
+
+logger = logging.getLogger(__name__)
 
 
 def _validate_session_is_active(session):
@@ -102,14 +108,14 @@ def mark_attendance(session, student, status, marked_by):
     try:
         from apps.gamification.services.gamification_service import award_points
         from apps.gamification.models import PointTransaction
-        
+
         if status == AttendanceRecord.Status.PRESENT:
             award_points(
                 student=student,
                 amount=10,
                 transaction_type=PointTransaction.Type.ATTENDANCE,
                 description=f"Attendance for {session}",
-                source_obj=record
+                source_obj=record,
             )
         elif status == AttendanceRecord.Status.LATE:
             award_points(
@@ -117,11 +123,11 @@ def mark_attendance(session, student, status, marked_by):
                 amount=5,
                 transaction_type=PointTransaction.Type.ATTENDANCE,
                 description=f"Late attendance for {session}",
-                source_obj=record
+                source_obj=record,
             )
     except Exception as e:
-        # Log error or ignore if gamification fails (should not block attendance)
-        print(f"Failed to award points: {e}")
+        # Gamification failure must never block attendance recording
+        logger.warning("Failed to award points for student %s: %s", student, e)
 
     return record, created
 
@@ -190,15 +196,13 @@ def get_session_attendance_summary(session):
         }
 
     Used by reports (Phase 3) and teacher dashboard.
+    All counts are resolved in a single DB query using aggregation.
     """
-    records = AttendanceRecord.objects.filter(session=session)
-    summary = {
-        "total": records.count(),
-        "present": 0,
-        "absent": 0,
-        "late": 0,
-        "excused": 0,
-    }
-    for record in records:
-        summary[record.status] = summary.get(record.status, 0) + 1
-    return summary
+    counts = AttendanceRecord.objects.filter(session=session).aggregate(
+        total=Count("id"),
+        present=Count("id", filter=Q(status=AttendanceRecord.Status.PRESENT)),
+        absent=Count("id", filter=Q(status=AttendanceRecord.Status.ABSENT)),
+        late=Count("id", filter=Q(status=AttendanceRecord.Status.LATE)),
+        excused=Count("id", filter=Q(status=AttendanceRecord.Status.EXCUSED)),
+    )
+    return {key: value or 0 for key, value in counts.items()}

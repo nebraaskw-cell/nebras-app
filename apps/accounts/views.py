@@ -1,5 +1,8 @@
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Count, Q
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView
@@ -8,23 +11,25 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.permissions import IsAdminOrTeacherRole, IsAdminRole, IsParentRole
+from apps.attendance.models import AttendanceRecord
+from apps.circles.models import Circle, Enrollment
+from apps.core.permissions import IsAdminOrTeacher, IsAdminRole, IsParentRole
+from apps.gamification.models import EarnedBadge
+from apps.gamification.services.gamification_service import get_total_points
+from apps.study_sessions.models import Session
 
 from .forms import StudentRegistrationForm
-from .models import User, ParentProfile
+from .models import ParentProfile, User
 from .serializers import (
+    ParentProfileRequestSerializer,
+    ParentProfileSerializer,
     StudentRegistrationSerializer,
     UserSerializer,
-    ParentProfileSerializer,
-    ParentProfileRequestSerializer,
 )
-from .services import registration_service
-from .services import parent_service
+from .services import parent_service, registration_service
 
+logger = logging.getLogger(__name__)
 
-from apps.circles.models import Circle, Enrollment
-from apps.study_sessions.models import Session
-from apps.attendance.models import AttendanceRecord
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = "accounts/dashboard.html"
@@ -37,11 +42,16 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         if user.role == User.Roles.ADMIN:
             context["pending_students"] = User.objects.filter(
-                role=User.Roles.STUDENT, registration_status=User.RegistrationStatus.PENDING
+                role=User.Roles.STUDENT,
+                registration_status=User.RegistrationStatus.PENDING,
             ).order_by("-date_joined")
-            context["pending_parents"] = ParentProfile.objects.filter(status=ParentProfile.Status.PENDING).order_by("-requested_at")
+            context["pending_parents"] = ParentProfile.objects.filter(
+                status=ParentProfile.Status.PENDING
+            ).order_by("-requested_at")
             context["active_circles_count"] = Circle.objects.filter(is_active=True).count()
-            context["active_enrollments_count"] = Enrollment.objects.filter(status="active").count()
+            context["active_enrollments_count"] = Enrollment.objects.filter(
+                status="active"
+            ).count()
 
         elif user.role == User.Roles.TEACHER:
             context["my_circles"] = Circle.objects.filter(teacher=user, is_active=True)
@@ -51,30 +61,37 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             context["active_sessions"] = Session.objects.filter(
                 cycle__circle__teacher=user, status="active"
             ).order_by("date", "start_time")
-            context["pending_parents"] = ParentProfile.objects.filter(
-                status=ParentProfile.Status.PENDING,
-                student__enrollments__cycle__circle__teacher=user,
-                student__enrollments__status="active"
-            ).distinct().order_by("-requested_at")
+            context["pending_parents"] = (
+                ParentProfile.objects.filter(
+                    status=ParentProfile.Status.PENDING,
+                    student__enrollments__cycle__circle__teacher=user,
+                    student__enrollments__status="active",
+                )
+                .distinct()
+                .order_by("-requested_at")
+            )
 
         elif user.role == User.Roles.STUDENT:
-            enrollment = Enrollment.objects.filter(student=user, status="active").select_related("cycle__circle").first()
+            enrollment = (
+                Enrollment.objects.filter(student=user, status="active")
+                .select_related("cycle__circle")
+                .first()
+            )
             context["my_enrollment"] = enrollment
             if enrollment:
-                records = AttendanceRecord.objects.filter(student=user)
-                context["attendance_present"] = records.filter(status="present").count()
-                context["attendance_absent"] = records.filter(status="absent").count()
+                attendance = AttendanceRecord.objects.filter(student=user).aggregate(
+                    present=Count("id", filter=Q(status="present")),
+                    absent=Count("id", filter=Q(status="absent")),
+                )
+                context["attendance_present"] = attendance["present"]
+                context["attendance_absent"] = attendance["absent"]
 
-            # Phase 4 Gamification
-            from apps.gamification.services.gamification_service import get_total_points
-            from apps.gamification.models import EarnedBadge
             context["total_points"] = get_total_points(user)
-            context["badges"] = EarnedBadge.objects.filter(student=user).select_related('badge')
+            context["badges"] = EarnedBadge.objects.filter(student=user).select_related("badge")
 
         elif user.role == User.Roles.PARENT:
             parent_profiles = (
-                ParentProfile.objects
-                .filter(parent=user)
+                ParentProfile.objects.filter(parent=user)
                 .select_related("student")
                 .order_by("-requested_at")
             )
@@ -88,32 +105,53 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             context["parent_profile"] = parent_profiles.first()
             context["can_request_parent_link"] = active_link_count < 3
 
-            approved_profiles = parent_profiles.filter(
-                status=ParentProfile.Status.APPROVED
-            )
-            linked_students = []
+            approved_profiles = parent_profiles.filter(status=ParentProfile.Status.APPROVED)
 
-            from apps.gamification.services.gamification_service import get_total_points
-            from apps.gamification.models import EarnedBadge
+            # Collect all student IDs from approved profiles in one pass
+            student_ids = [p.student_id for p in approved_profiles]
 
-            for profile in approved_profiles:
-                student = profile.student
-                enrollment = (
-                    Enrollment.objects
-                    .filter(student=student, status="active")
-                    .select_related("cycle__circle__teacher")
-                    .first()
+            # Fetch all attendance counts in a single aggregated query
+            attendance_qs = (
+                AttendanceRecord.objects.filter(student_id__in=student_ids)
+                .values("student_id")
+                .annotate(
+                    present=Count("id", filter=Q(status="present")),
+                    absent=Count("id", filter=Q(status="absent")),
                 )
-                records = AttendanceRecord.objects.filter(student=student)
-                linked_students.append({
-                    "profile": profile,
-                    "student": student,
-                    "enrollment": enrollment,
-                    "attendance_present": records.filter(status="present").count(),
-                    "attendance_absent": records.filter(status="absent").count(),
-                    "total_points": get_total_points(student),
-                    "badges": EarnedBadge.objects.filter(student=student).select_related("badge"),
-                })
+            )
+            attendance_map = {row["student_id"]: row for row in attendance_qs}
+
+            # Fetch all active enrollments in a single query
+            enrollment_map = {
+                e.student_id: e
+                for e in Enrollment.objects.filter(
+                    student_id__in=student_ids, status="active"
+                ).select_related("cycle__circle__teacher")
+            }
+
+            # Fetch all earned badges in a single query
+            badges_map: dict[int, list] = {sid: [] for sid in student_ids}
+            for badge in EarnedBadge.objects.filter(
+                student_id__in=student_ids
+            ).select_related("badge"):
+                badges_map[badge.student_id].append(badge)
+
+            # Build linked_students with no further DB queries
+            linked_students = []
+            for profile in approved_profiles:
+                sid = profile.student_id
+                att = attendance_map.get(sid, {})
+                linked_students.append(
+                    {
+                        "profile": profile,
+                        "student": profile.student,
+                        "enrollment": enrollment_map.get(sid),
+                        "attendance_present": att.get("present", 0),
+                        "attendance_absent": att.get("absent", 0),
+                        "total_points": get_total_points(profile.student),
+                        "badges": badges_map.get(sid, []),
+                    }
+                )
 
             context["linked_students"] = linked_students
 
@@ -127,7 +165,10 @@ class StudentRegistrationView(CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(self.request, "Registration submitted. Your account is pending approval.")
+        messages.success(
+            self.request,
+            "Registration submitted. Your account is pending approval.",
+        )
         return response
 
 
@@ -150,7 +191,7 @@ class StudentRegistrationAPIView(generics.CreateAPIView):
 
 class PendingStudentListAPIView(generics.ListAPIView):
     serializer_class = UserSerializer
-    permission_classes = [IsAdminOrTeacherRole]
+    permission_classes = [IsAdminOrTeacher]
 
     def get_queryset(self):
         return registration_service.get_pending_students()
@@ -172,14 +213,16 @@ class ApproveStudentAPIView(APIView):
 
 class ParentLinkRequestAPIView(generics.CreateAPIView):
     """Parent requests to link to a student."""
+
     serializer_class = ParentProfileRequestSerializer
     permission_classes = [IsParentRole]
 
 
 class PendingParentLinkListAPIView(generics.ListAPIView):
     """Admin/Teacher views pending parent link requests."""
+
     serializer_class = ParentProfileSerializer
-    permission_classes = [IsAdminOrTeacherRole]
+    permission_classes = [IsAdminOrTeacher]
 
     def get_queryset(self):
         return ParentProfile.objects.filter(status=ParentProfile.Status.PENDING)
@@ -187,13 +230,14 @@ class PendingParentLinkListAPIView(generics.ListAPIView):
 
 class ApproveParentLinkAPIView(APIView):
     """Admin/Teacher approves a parent link request."""
-    permission_classes = [IsAdminOrTeacherRole]
+
+    permission_classes = [IsAdminOrTeacher]
 
     def post(self, request, pk):
         link_request = generics.get_object_or_404(
             ParentProfile,
             pk=pk,
-            status=ParentProfile.Status.PENDING
+            status=ParentProfile.Status.PENDING,
         )
         try:
             link_request = parent_service.approve_parent_linking(
@@ -204,4 +248,3 @@ class ApproveParentLinkAPIView(APIView):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(ParentProfileSerializer(link_request).data, status=status.HTTP_200_OK)
-

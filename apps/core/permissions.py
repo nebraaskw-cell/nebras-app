@@ -37,8 +37,6 @@ class IsOwnerOrAdmin(BasePermission):
         return getattr(obj, "student_id", None) == request.user.pk or getattr(obj, "recipient_id", None) == request.user.pk
 
 
-class IsAdminOrTeacherRole(IsAdminOrTeacher):
-    pass
 
 
 class ReadOnlyOrAdminRole(BasePermission):

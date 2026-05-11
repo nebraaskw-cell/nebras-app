@@ -8,7 +8,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.permissions import IsAdminOrTeacherRole, IsAdminRole, IsParentRole
+from apps.core.permissions import IsAdminOrTeacher, IsAdminRole, IsParentRole
 from apps.circles.models import Circle
 from apps.accounts.models import User, ParentProfile
 from .services import generation_service
@@ -91,7 +91,7 @@ class ReportsDashboardView(LoginRequiredMixin, TemplateView):
 
 
 class CircleReportAPIView(APIView):
-    permission_classes = [IsAdminOrTeacherRole]
+    permission_classes = [IsAdminOrTeacher]
 
     def get(self, request, pk):
         circle = generics.get_object_or_404(Circle, pk=pk)
@@ -141,7 +141,7 @@ class RegistrationAnalyticsAPIView(APIView):
 
 
 class CircleReportExcelAPIView(APIView):
-    permission_classes = [IsAdminOrTeacherRole]
+    permission_classes = [IsAdminOrTeacher]
 
     def get(self, request, pk):
         circle = generics.get_object_or_404(Circle, pk=pk)
