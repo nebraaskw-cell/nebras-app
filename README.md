@@ -10,7 +10,7 @@ This repository currently implements:
 - Phase 2 delivery: sessions lifecycle, attendance flows, enrollment lifecycle, notifications APIs
 - Phase 3 delivery: chat domain, reporting dashboards/APIs, parent linking workflows
 - Phase 4 partial delivery: gamification, activity logs, archiving and backup utilities
-- Phase 5 scaffolding: AI assistant and AI evaluation integration boundaries (structure only)
+- Phase 5 delivery: AI assistant for Islamic educational guidance, AI evaluation for Sunnah memorization
 
 The project is now in a **pre-production hardening stage** where reliability, UI consistency,
 test coverage, and operational readiness are the main priorities.
@@ -22,6 +22,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 copy .env.example .env
+# Add OPENAI_API_KEY to .env for AI features
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver

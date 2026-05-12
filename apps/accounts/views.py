@@ -198,7 +198,7 @@ class PendingStudentListAPIView(generics.ListAPIView):
 
 
 class ApproveStudentAPIView(APIView):
-    permission_classes = [IsAdminRole]
+    permission_classes = [IsAdminOrTeacher]
 
     def post(self, request, pk):
         student = generics.get_object_or_404(
@@ -208,6 +208,23 @@ class ApproveStudentAPIView(APIView):
             registration_status=User.RegistrationStatus.PENDING,
         )
         registration_service.approve_student_registration(student, approved_by=request.user)
+        return Response(UserSerializer(student).data, status=status.HTTP_200_OK)
+
+
+class RejectStudentAPIView(APIView):
+    permission_classes = [IsAdminOrTeacher]
+
+    def post(self, request, pk):
+        student = generics.get_object_or_404(
+            User,
+            pk=pk,
+            role=User.Roles.STUDENT,
+            registration_status=User.RegistrationStatus.PENDING,
+        )
+        try:
+            registration_service.reject_user(student, rejected_by=request.user)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(UserSerializer(student).data, status=status.HTTP_200_OK)
 
 
@@ -243,6 +260,28 @@ class ApproveParentLinkAPIView(APIView):
             link_request = parent_service.approve_parent_linking(
                 profile=link_request,
                 approved_by=request.user,
+            )
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(ParentProfileSerializer(link_request).data, status=status.HTTP_200_OK)
+
+
+class RejectParentLinkAPIView(APIView):
+    """Admin/Teacher rejects a parent link request."""
+
+    permission_classes = [IsAdminOrTeacher]
+
+    def post(self, request, pk):
+        link_request = generics.get_object_or_404(
+            ParentProfile,
+            pk=pk,
+            status=ParentProfile.Status.PENDING,
+        )
+        try:
+            link_request = parent_service.reject_parent_linking(
+                profile=link_request,
+                rejected_by=request.user,
             )
         except ValueError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)

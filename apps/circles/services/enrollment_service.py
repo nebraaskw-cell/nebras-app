@@ -17,12 +17,27 @@ def enroll_student(student, cycle, enrolled_by):
     - User must have role=student.
     - Student must have NO existing PENDING or ACTIVE enrollment
       in any cycle. A student can only be in one circle at a time.
-      The caller must withdraw the existing enrollment first.
+    - The target cycle cannot be completed or archived.
+    - The target cycle must have available capacity.
 
     Raises ValueError if any conflict exists.
     Returns the new Enrollment instance.
     """
     _validate_student(student)
+
+    if cycle.status in [cycle.Status.COMPLETED, cycle.Status.ARCHIVED]:
+        raise ValueError(
+            "Cannot enroll in a cycle that is completed or archived."
+        )
+
+    capacity_usage = Enrollment.objects.filter(
+        cycle=cycle,
+        status__in=[Enrollment.Status.PENDING, Enrollment.Status.ACTIVE],
+    ).count()
+    if capacity_usage >= cycle.circle.capacity:
+        raise ValueError(
+            "This cycle is full and cannot accept additional enrollments."
+        )
 
     conflicting = Enrollment.objects.filter(
         student=student,

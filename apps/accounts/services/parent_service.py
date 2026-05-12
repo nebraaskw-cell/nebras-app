@@ -82,6 +82,11 @@ def request_parent_linking(parent, student, notes=""):
             "A pending or approved link already exists for this student."
         )
 
+    if student.registration_status != User.RegistrationStatus.APPROVED:
+        raise ValueError(
+            "Cannot request a parent link for a student who is not approved."
+        )
+
     if ParentProfile.objects.filter(
         student=student,
         status=ParentProfile.Status.APPROVED,

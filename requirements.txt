@@ -4,4 +4,5 @@ django-filter>=25.1,<26.0
 python-dotenv>=1.0,<2.0
 whitenoise>=6.9,<7.0
 psycopg[binary]>=3.2,<4.0
+openai>=1.0,<2.0
 

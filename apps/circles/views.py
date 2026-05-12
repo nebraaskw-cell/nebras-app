@@ -139,6 +139,12 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        if request.user.role == User.Roles.TEACHER and cycle.circle.teacher != request.user:
+            return Response(
+                {"detail": "You can only enroll students into your assigned circles."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         try:
             enrollment = enrollment_service.enroll_student(
                 student=student,
@@ -153,11 +159,20 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
+    def _assert_teacher_manages_enrollment(self, enrollment, user):
+        if user.role != User.Roles.TEACHER:
+            return
+        if enrollment.cycle.circle.teacher != user:
+            raise ValueError(
+                "You can only manage enrollments for your assigned circle."
+            )
+
     @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):
         """Transition enrollment PENDING → ACTIVE."""
         enrollment = self.get_object()
         try:
+            self._assert_teacher_manages_enrollment(enrollment, request.user)
             enrollment_service.approve_enrollment(enrollment, approved_by=request.user)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -168,6 +183,7 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
         """Transition enrollment to WITHDRAWN."""
         enrollment = self.get_object()
         try:
+            self._assert_teacher_manages_enrollment(enrollment, request.user)
             enrollment_service.withdraw_enrollment(enrollment, withdrawn_by=request.user)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -208,17 +224,8 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
         serializer = RemoveEnrollmentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Check if teacher is assigned to the circle
-        if (
-            request.user.role == User.Roles.TEACHER
-            and enrollment.cycle.circle.teacher != request.user
-        ):
-            return Response(
-                {"detail": "You can only remove students from your assigned circle."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
         try:
+            self._assert_teacher_manages_enrollment(enrollment, request.user)
             enrollment_service.remove_enrollment(
                 enrollment=enrollment,
                 removed_by=request.user,

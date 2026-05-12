@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
-from apps.core.permissions import IsAdminOrTeacher
+from apps.core.permissions import IsAdminOrTeacher, IsAdminTeacherOrStudentSelf
 from apps.study_sessions.models import Session
 
 from .models import AttendanceRecord
@@ -23,19 +23,23 @@ class AttendanceRecordViewSet(
 ):
     """
     Read-only viewset for attendance records.
-    Admin and teachers can list/filter; students see their own.
+    Admin and teachers can list/filter; students can view their own records.
     """
 
     serializer_class = AttendanceRecordSerializer
-    permission_classes = [IsAdminOrTeacher]
+    permission_classes = [IsAdminTeacherOrStudentSelf]
     filterset_fields = ["session", "student", "status"]
     search_fields = ["student__username", "student__first_name", "student__last_name"]
     ordering_fields = ["marked_at", "status"]
 
     def get_queryset(self):
-        return AttendanceRecord.objects.select_related(
+        queryset = AttendanceRecord.objects.select_related(
             "session", "student", "marked_by"
         )
+        user = self.request.user
+        if user.is_authenticated and user.is_student_role:
+            return queryset.filter(student=user)
+        return queryset
 
 
 class MarkAttendanceAPIView(APIView):
