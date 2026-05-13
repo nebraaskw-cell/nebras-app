@@ -3,23 +3,97 @@
 {% block title %}حلقات نبراس{% endblock %}
 
 {% block content %}
-<section class="row align-items-center g-4">
-    <div class="col-lg-7">
-        <h1 class="display-6 fw-bold mb-3">Halaqat Nebras - حلقات نبراس لحفظ السنة النبوية</h1>
-        <p class="lead text-secondary mb-4">
-            منصة تعليمية لإدارة حلقات حفظ السنة النبوية في مساجد الكويت.
-        </p>
-        <div class="d-flex flex-wrap gap-2">
-            <a class="btn btn-primary" href="{% url 'accounts:student-register' %}">تسجيل طالب</a>
-            <a class="btn btn-outline-secondary" href="{% url 'circles:list' %}">استعراض الحلقات</a>
+<div class="homepage-hero">
+    <div class="container position-relative">
+        <div id="homeCarousel" class="carousel slide home-carousel" data-bs-ride="carousel">
+            <div class="carousel-inner rounded-4 overflow-hidden shadow-lg">
+                <div class="carousel-item active">
+                    <img src="https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=1400&q=80" class="d-block w-100" alt="حلقات حفظ السنة">
+                    <div class="carousel-caption d-none d-md-block text-start">
+                        <span class="badge bg-primary bg-opacity-90 mb-3">منصة تعليمية متكاملة</span>
+                        <h1>ابنِ رحلة حفظك بثقة وتنظيم</h1>
+                        <p class="lead">إدارة الحلقات، تقارير الحضور، متابعة أولياء الأمور والنقاط في تجربة سهلة وسريعة.</p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a class="btn btn-primary btn-lg" href="{% url 'accounts:student-register' %}">سجل الآن</a>
+                            <a class="btn btn-outline-light btn-lg" href="{% url 'circles:list' %}">استعرض الحلقات</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <img src="https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1400&q=80" class="d-block w-100" alt="معلم وطلاب">
+                    <div class="carousel-caption d-none d-md-block text-start">
+                        <span class="badge bg-gold bg-opacity-90 mb-3">للمعلمين وأولياء الأمور</span>
+                        <h1>ميزات حديثة لإدارة الحلقات بكفاءة</h1>
+                        <p class="lead">تابع الجلسات، سجل الحضور، وافق على روابط أولياء الأمور من لوحة واحد.</p>
+                        <a class="btn btn-primary btn-lg" href="{% url 'accounts:student-register' %}">ابدأ الآن</a>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1400&q=80" class="d-block w-100" alt="تقارير وتعليم">
+                    <div class="carousel-caption d-none d-md-block text-start">
+                        <span class="badge bg-success bg-opacity-90 mb-3">تقارير ذكية</span>
+                        <h1>عرض أداء الطلاب والنقاط بسهولة</h1>
+                        <p class="lead">احصل على ملخص الحضور والنقاط والأوسمة لكل طالب في مكان واحد.</p>
+                        <a class="btn btn-primary btn-lg" href="{% url 'reports:dashboard' %}">عرض التقارير</a>
+                    </div>
+                </div>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#homeCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">السابق</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#homeCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">التالي</span>
+            </button>
         </div>
     </div>
-    <div class="col-lg-5">
-        <div class="bg-white border nebras-card p-4">
-            <h2 class="h5 mb-3">مرحلة البناء الحالية</h2>
-            <p class="text-secondary mb-0">
-                تم تجهيز الأساس: المستخدمون، الأدوار، الحلقات، الدورات، لوحة الإدارة، وواجهات API الأولية.
-            </p>
+</div>
+
+<section class="container homepage-features py-5">
+    <div class="row g-4 text-center">
+        <div class="col-lg-4">
+            <div class="feature-card nebras-card p-4 h-100">
+                <div class="feature-icon mb-3"><i class="bi bi-people-fill"></i></div>
+                <h3>إدارة الحلقات</h3>
+                <p>أنشئ الحلقات والدورات ونظم الطلاب بسهولة من خلال لوحة تحكم مرنة.</p>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="feature-card nebras-card p-4 h-100">
+                <div class="feature-icon mb-3"><i class="bi bi-calendar-check-fill"></i></div>
+                <h3>الحضور والجلسات</h3>
+                <p>سجل حضور الطلاب وأدر الجلسات مع إمكانية بدء وإنهاء الجلسات تلقائياً.</p>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="feature-card nebras-card p-4 h-100">
+                <div class="feature-icon mb-3"><i class="bi bi-bar-chart-fill"></i></div>
+                <h3>تقارير واضحة</h3>
+                <p>اطلع على أداء الطلاب، نقاطهم، وأوسمتهم عبر تقارير منظمة ومختصرة.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container homepage-highlight py-5 mb-5">
+    <div class="row align-items-center gy-4">
+        <div class="col-lg-6">
+            <div class="nebras-card p-5 shadow-sm">
+                <h2>منصة تعليمية متكاملة لطلاب حفظ السنة</h2>
+                <p class="lead">نبراس تسهل إدارة الحلقة، متابعة ولي الأمر، وتقديم تجربة تعليمية منظمة للطلاب والمعلمين.</p>
+                <ul class="list-unstyled mt-4">
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i> تسجيل الطلاب ومراجعة الطلبات</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i> ربط أولياء الأمور ومتابعة الأبناء</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i> لوحة تحكم بسيطة وحديثة</li>
+                </ul>
+                <a class="btn btn-primary btn-lg mt-4" href="{% url 'accounts:student-register' %}">ابدأ الآن</a>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="image-panel rounded-4 overflow-hidden shadow-lg">
+                <img src="https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=1200&q=80" alt="تجربة تعليمية" class="img-fluid">
+            </div>
         </div>
     </div>
 </section>
