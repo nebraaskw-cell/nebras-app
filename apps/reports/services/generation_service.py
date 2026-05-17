@@ -2,7 +2,6 @@ from django.db.models import Count, Q
 
 from apps.accounts.models import User
 from apps.attendance.models import AttendanceRecord
-from apps.circles.models import Enrollment
 from apps.study_sessions.models import Session
 
 
@@ -12,21 +11,21 @@ def generate_circle_detail_report(circle):
 
     Returns a dict containing:
     - Circle metadata (teacher, governorate, capacity, etc.)
-    - Active cycle info (if any)
+    - Active season/cycle info (if any)
     - Enrollment counts
     - Session counts by status
     - Attendance summary with percentages
     """
-    from apps.circles.models import Cycle
+    from apps.seasons.models import SeasonCircle, Enrollment
 
-    active_cycle = Cycle.objects.filter(
+    active_cycle = SeasonCircle.objects.filter(
         circle=circle,
-        status="active",
+        season__status="active",
     ).first()
 
     enrolled_count = (
         Enrollment.objects
-        .filter(cycle__circle=circle, status="active")
+        .filter(season_circle__circle=circle, status="active")
         .count()
         if active_cycle else 0
     )
@@ -66,16 +65,15 @@ def generate_circle_detail_report(circle):
             "name_ar": circle.name_ar,
             "governorate": circle.get_governorate_display(),
             "gender": circle.get_gender_display(),
-            "mosque": circle.mosque_name,
             "teacher": str(circle.teacher) if circle.teacher else None,
-            "capacity": circle.capacity,
-            "is_active": circle.is_active,
+            "capacity": active_cycle.capacity if active_cycle else 0,
+            "is_active": circle.status == "open",
         },
         "active_cycle": {
             "id": active_cycle.pk,
-            "title": active_cycle.title,
-            "start_date": str(active_cycle.start_date),
-            "end_date": str(active_cycle.end_date),
+            "title": active_cycle.season.title,
+            "start_date": str(active_cycle.season.start_date),
+            "end_date": str(active_cycle.season.end_date) if active_cycle.season.end_date else None,
         } if active_cycle else None,
         "enrollments": {
             "active": enrolled_count,
@@ -90,44 +88,55 @@ def generate_circle_detail_report(circle):
 
 def generate_student_performance_report(student):
     """
-    Performance report for a single student across all cycles.
+    Performance report for a single student across all seasons.
 
     Returns a dict containing:
     - Student metadata
-    - Total cycles participated in
-    - Per-cycle history with attendance breakdown and rate
+    - Total seasons participated in
+    - Per-season history with attendance breakdown and rate
     """
+    from apps.seasons.models import Enrollment
+
     enrollments = (
         Enrollment.objects
         .filter(student=student)
-        .select_related("cycle__circle")
+        .select_related("season", "season_circle__circle")
         .order_by("-enrolled_at")
     )
 
     history = []
     for enrollment in enrollments:
         completed_sessions = Session.objects.filter(
-            cycle=enrollment.cycle,
+            cycle=enrollment.season_circle,
             status="completed",
-        ).count()
+        ).count() if enrollment.season_circle else 0
 
-        attendance = AttendanceRecord.objects.filter(
-            student=student,
-            session__cycle=enrollment.cycle,
-        ).aggregate(
-            total=Count("id"),
-            present=Count("id", filter=Q(status="present")),
-            absent=Count("id", filter=Q(status="absent")),
-            late=Count("id", filter=Q(status="late")),
-            excused=Count("id", filter=Q(status="excused")),
-        )
+        if enrollment.season_circle:
+            attendance = AttendanceRecord.objects.filter(
+                student=student,
+                session__cycle=enrollment.season_circle,
+            ).aggregate(
+                total=Count("id"),
+                present=Count("id", filter=Q(status="present")),
+                absent=Count("id", filter=Q(status="absent")),
+                late=Count("id", filter=Q(status="late")),
+                excused=Count("id", filter=Q(status="excused")),
+            )
+        else:
+            attendance = {
+                "total": 0,
+                "present": 0,
+                "absent": 0,
+                "late": 0,
+                "excused": 0,
+            }
 
         total = attendance["total"] or 1
         attendance_rate = round(attendance["present"] / total * 100, 1)
 
         history.append({
-            "cycle": str(enrollment.cycle),
-            "circle": enrollment.cycle.circle.name_ar,
+            "cycle": str(enrollment.season),
+            "circle": enrollment.season_circle.circle.name_ar if enrollment.season_circle else "لم يتم اختيار الحلقة بعد",
             "enrollment_status": enrollment.get_status_display(),
             "enrolled_at": str(enrollment.enrolled_at.date()),
             "sessions_completed_in_cycle": completed_sessions,

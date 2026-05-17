@@ -12,7 +12,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.attendance.models import AttendanceRecord
-from apps.circles.models import Circle, Enrollment
+from apps.circles.models import Circle
+from apps.seasons.models import Enrollment
 from apps.core.permissions import IsAdminOrTeacher, IsAdminRole, IsParentRole
 from apps.gamification.models import EarnedBadge
 from apps.gamification.services.gamification_service import get_total_points
@@ -48,23 +49,23 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             context["pending_parents"] = ParentProfile.objects.filter(
                 status=ParentProfile.Status.PENDING
             ).order_by("-requested_at")
-            context["active_circles_count"] = Circle.objects.filter(is_active=True).count()
+            context["active_circles_count"] = Circle.objects.filter(status="open").count()
             context["active_enrollments_count"] = Enrollment.objects.filter(
                 status="active"
             ).count()
 
         elif user.role == User.Roles.TEACHER:
-            context["my_circles"] = Circle.objects.filter(teacher=user, is_active=True)
+            context["my_circles"] = Circle.objects.filter(season_circles__supervisor=user, status="open").distinct()
             context["upcoming_sessions"] = Session.objects.filter(
-                cycle__circle__teacher=user, status="scheduled"
+                cycle__supervisor=user, status="scheduled"
             ).order_by("date", "start_time")[:5]
             context["active_sessions"] = Session.objects.filter(
-                cycle__circle__teacher=user, status="active"
+                cycle__supervisor=user, status="active"
             ).order_by("date", "start_time")
             context["pending_parents"] = (
                 ParentProfile.objects.filter(
                     status=ParentProfile.Status.PENDING,
-                    student__enrollments__cycle__circle__teacher=user,
+                    student__enrollments__season_circle__supervisor=user,
                     student__enrollments__status="active",
                 )
                 .distinct()
@@ -74,7 +75,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         elif user.role == User.Roles.STUDENT:
             enrollment = (
                 Enrollment.objects.filter(student=user, status="active")
-                .select_related("cycle__circle")
+                .select_related("season_circle__circle")
                 .first()
             )
             context["my_enrollment"] = enrollment
@@ -126,7 +127,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 e.student_id: e
                 for e in Enrollment.objects.filter(
                     student_id__in=student_ids, status="active"
-                ).select_related("cycle__circle__teacher")
+                ).select_related("season_circle__circle", "season_circle__supervisor")
             }
 
             # Fetch all earned badges in a single query

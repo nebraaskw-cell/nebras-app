@@ -7,8 +7,9 @@ from django.utils import timezone
 from apps.accounts.models import ParentProfile
 from apps.accounts.services import parent_service, registration_service
 from apps.attendance.models import AttendanceRecord
-from apps.circles.models import Circle, Cycle, Enrollment
-from apps.circles.services import enrollment_service
+from apps.circles.models import Circle
+from apps.seasons.models import Season, SeasonCircle, Enrollment
+from apps.seasons.services import enrollment_service
 from apps.core.choices import GenderChoices, GovernorateChoices
 from apps.study_sessions.models import Session
 from apps.study_sessions.services.session_service import generate_sessions_for_cycle
@@ -19,7 +20,7 @@ DEMO_PASSWORD = "DemoPass123!"
 
 
 class Command(BaseCommand):
-    help = "Seed demo users, circles, cycles, enrollments, sessions, and report data."
+    help = "Seed demo users, seasons, circles, enrollments, sessions, and report data."
 
     def handle(self, *args, **options):
         admins = self._create_users("admin", User.Roles.ADMIN, is_staff=True)
@@ -29,9 +30,18 @@ class Command(BaseCommand):
 
         primary_admin = admins[0]
         circles = self._create_circles(teachers)
-        cycles = self._create_cycles(circles)
-        enrollments = self._create_enrollments(students, cycles, primary_admin)
+        
+        # 1. Create global Season
+        season = self._create_season()
+        
+        # 2. Create SeasonCircles
+        season_circles = self._create_season_circles(season, circles)
+        
+        # 3. Create Season Enrollments and assign to circles
+        enrollments = self._create_enrollments(students, season, season_circles, primary_admin)
+        
         self._create_parent_links(parents, students, primary_admin)
+        
         completed_sessions = self._prepare_sessions_and_attendance(enrollments, primary_admin)
 
         self.stdout.write(self.style.SUCCESS("Demo data is ready."))
@@ -40,7 +50,7 @@ class Command(BaseCommand):
         self.stdout.write("Teachers: " + ", ".join(user.username for user in teachers))
         self.stdout.write("Students: " + ", ".join(user.username for user in students))
         self.stdout.write("Parents:  " + ", ".join(user.username for user in parents))
-        self.stdout.write(f"Circles: {len(circles)} | Cycles: {len(cycles)}")
+        self.stdout.write(f"Circles: {len(circles)} | Season Circles: {len(season_circles)}")
         self.stdout.write(f"Enrollments: {len(enrollments)} | Completed demo sessions: {completed_sessions}")
 
     def _create_users(self, prefix, role, is_staff=False):
@@ -82,79 +92,112 @@ class Command(BaseCommand):
 
     def _create_circles(self, teachers):
         circle_data = [
-            ("abu_bakr", "حلقة أبي بكر الصديق", GenderChoices.MALE, GovernorateChoices.CAPITAL, "مسجد الدولة الكبير"),
-            ("omar", "حلقة عمر بن الخطاب", GenderChoices.MALE, GovernorateChoices.HAWALLI, "مسجد بلال بن رباح"),
-            ("othman", "حلقة عثمان بن عفان", GenderChoices.MALE, GovernorateChoices.FARWANIYA, "مسجد الهدى"),
-            ("aisha", "حلقة عائشة أم المؤمنين", GenderChoices.FEMALE, GovernorateChoices.MUBARAK_AL_KABEER, "مركز أم المؤمنين"),
-            ("fatima", "حلقة فاطمة الزهراء", GenderChoices.FEMALE, GovernorateChoices.AHMADI, "مركز الهدى النسائي"),
+            ("abu_bakr", "حلقة أبي بكر الصديق", GenderChoices.MALE, GovernorateChoices.CAPITAL),
+            ("omar", "حلقة عمر بن الخطاب", GenderChoices.MALE, GovernorateChoices.HAWALLI),
+            ("othman", "حلقة عثمان بن عفان", GenderChoices.MALE, GovernorateChoices.FARWANIYA),
+            ("aisha", "حلقة عائشة أم المؤمنين", GenderChoices.FEMALE, GovernorateChoices.MUBARAK_AL_KABEER),
+            ("fatima", "حلقة فاطمة الزهراء", GenderChoices.FEMALE, GovernorateChoices.AHMADI),
         ]
         circles = []
-        for index, (name, name_ar, gender, governorate, mosque_name) in enumerate(circle_data):
+        for index, (name, name_ar, gender, governorate) in enumerate(circle_data):
             circle, _created = Circle.objects.get_or_create(
                 name=name,
                 defaults={
                     "name_ar": name_ar,
                     "gender": gender,
+                    "description": "حلقة مباركة مخصصة لحفظ السنة النبوية وتدريس أصول الحديث وتلاوة المتون الحديثية.",
+                    "start_date": date.today() - timedelta(days=30),
+                    "end_date": date.today() + timedelta(days=90),
+                    "status": Circle.Status.OPEN,
                     "governorate": governorate,
-                    "mosque_name": mosque_name,
-                    "location_name": "الكويت",
                     "teacher": teachers[index],
-                    "capacity": 25,
-                    "is_active": True,
                 },
             )
             circle.name_ar = name_ar
             circle.gender = gender
+            circle.description = "حلقة مباركة مخصصة لحفظ السنة النبوية وتدريس أصول الحديث وتلاوة المتون الحديثية."
+            circle.start_date = date.today() - timedelta(days=30)
+            circle.end_date = date.today() + timedelta(days=90)
+            circle.status = Circle.Status.OPEN
             circle.governorate = governorate
-            circle.mosque_name = mosque_name
-            circle.location_name = "الكويت"
             circle.teacher = teachers[index]
-            circle.capacity = 25
-            circle.is_active = True
             circle.save()
             circles.append(circle)
         return circles
 
-    def _create_cycles(self, circles):
+    def _create_season(self):
         start_date = date.today() - timedelta(days=21)
-        cycles = []
-        for index, circle in enumerate(circles, start=1):
-            cycle, _created = Cycle.objects.get_or_create(
+        end_date = date.today() + timedelta(days=90)
+        season, _created = Season.objects.get_or_create(
+            title="موسم ربيع 2026 التجريبي",
+            defaults={
+                "start_date": start_date,
+                "end_date": end_date,
+                "status": Season.Status.ACTIVE,
+                "notes": "Demo season for testing decoupled architecture.",
+            },
+        )
+        season.start_date = start_date
+        season.end_date = end_date
+        season.status = Season.Status.ACTIVE
+        season.save()
+        return season
+
+    def _create_season_circles(self, season, circles):
+        season_circles = []
+        for circle in circles:
+            sc, _created = SeasonCircle.objects.get_or_create(
+                season=season,
                 circle=circle,
-                title="دورة ربيع 2026 التجريبية",
                 defaults={
-                    "start_date": start_date + timedelta(days=index),
-                    "status": Cycle.Status.ACTIVE,
-                    "notes": "Demo cycle for testing Phase 2 flows.",
+                    "supervisor": circle.teacher,
+                    "capacity": 25,
                 },
             )
-            cycle.start_date = start_date + timedelta(days=index)
-            cycle.status = Cycle.Status.ACTIVE
-            cycle.notes = "Demo cycle for testing Phase 2 flows."
-            cycle.save()
-            generate_sessions_for_cycle(cycle)
-            cycles.append(cycle)
-        return cycles
+            sc.supervisor = circle.teacher
+            sc.save()
+            generate_sessions_for_cycle(sc)
+            season_circles.append(sc)
+        return season_circles
 
-    def _create_enrollments(self, students, cycles, approved_by):
+    def _create_enrollments(self, students, season, season_circles, approved_by):
         enrollments = []
-        for student, cycle in zip(students, cycles):
+        for student, season_circle in zip(students, season_circles):
+            # Clean up old active enrollments
             Enrollment.objects.filter(
                 student=student,
                 status__in=[Enrollment.Status.PENDING, Enrollment.Status.ACTIVE],
-            ).exclude(cycle=cycle).update(
+            ).exclude(season=season).update(
                 status=Enrollment.Status.WITHDRAWN,
                 withdrawn_by=approved_by,
                 withdrawn_at=timezone.now(),
             )
 
-            enrollment = Enrollment.objects.filter(student=student, cycle=cycle).first()
+            enrollment = Enrollment.objects.filter(student=student, season=season).first()
             if enrollment is None:
-                enrollment = enrollment_service.enroll_student(
+                # Temporarily open registration to allow enroll_student_in_season service validation
+                prev_status = season.status
+                season.status = Season.Status.REGISTRATION_OPEN
+                season.save()
+
+                enrollment = enrollment_service.enroll_student_in_season(
                     student=student,
-                    cycle=cycle,
+                    season=season,
                     enrolled_by=approved_by,
                 )
+
+                # Restore original status
+                season.status = prev_status
+                season.save()
+
+            # Assign Circle
+            enrollment = enrollment_service.assign_circle_to_enrollment(
+                enrollment=enrollment,
+                season_circle=season_circle,
+                assigned_by=approved_by,
+            )
+
+            # Approve Enrollment
             if enrollment.status != Enrollment.Status.ACTIVE:
                 enrollment = enrollment_service.approve_enrollment(
                     enrollment=enrollment,
@@ -195,7 +238,7 @@ class Command(BaseCommand):
 
         for enrollment in enrollments:
             sessions = list(
-                Session.objects.filter(cycle=enrollment.cycle)
+                Session.objects.filter(cycle=enrollment.season_circle)
                 .order_by("date", "start_time")[:5]
             )
             for index, session in enumerate(sessions):
@@ -207,7 +250,7 @@ class Command(BaseCommand):
                     student=enrollment.student,
                     defaults={
                         "status": status_cycle[index % len(status_cycle)],
-                        "marked_by": enrollment.cycle.circle.teacher or marked_by,
+                        "marked_by": enrollment.season_circle.supervisor or marked_by,
                     },
                 )
                 completed_sessions += 1

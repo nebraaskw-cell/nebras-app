@@ -1,0 +1,129 @@
+{% extends "base/base.html" %}
+
+{% block title %}
+    {% if form.instance.pk %}تعديل موسم {{ form.instance.title }}{% else %}إضافة موسم جديد{% endif %}
+{% endblock %}
+
+{% block shell_title %}
+    {% if form.instance.pk %}تعديل بيانات الموسم{% else %}بناء موسم دراسي جديد{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <article class="nebras-card p-5 shadow-sm border border-light-subtle rounded-3">
+            <div class="mb-4">
+                <span class="text-primary eyebrow fw-bold text-uppercase d-block mb-1">إدارة المواسم الأكاديمية</span>
+                <h1 class="h3 fw-bold text-dark">
+                    {% if form.instance.pk %}
+                        تعديل موسم: {{ form.instance.title }}
+                    {% else %}
+                        إضافة موسم دراسي جديد
+                    {% endif %}
+                </h1>
+                <p class="text-secondary small mb-0">الموسم هو الفترة الزمنية التي تستوعب نشاط الحلقات ويتم خلالها استقبال تسجيلات الطلاب واعتماد المعلمين.</p>
+            </div>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger mb-4">
+                        {% for error in form.non_field_errors %}
+                            <p class="mb-0 small"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Form Fields Grid -->
+                <div class="row g-3 mb-4">
+                    <!-- Title -->
+                    <div class="col-md-12">
+                        <label for="{{ form.title.id_for_label }}" class="form-label fw-semibold text-dark">عنوان الموسم</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="text-danger small mt-1">{% for err in form.title.errors %}{{ err }} {% endfor %}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Start Date -->
+                    <div class="col-md-6">
+                        <label for="{{ form.start_date.id_for_label }}" class="form-label fw-semibold text-dark">تاريخ البداية (اختياري)</label>
+                        {{ form.start_date }}
+                        {% if form.start_date.errors %}
+                            <div class="text-danger small mt-1">{% for err in form.start_date.errors %}{{ err }} {% endfor %}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- End Date -->
+                    <div class="col-md-6">
+                        <label for="{{ form.end_date.id_for_label }}" class="form-label fw-semibold text-dark">تاريخ النهاية (اختياري)</label>
+                        {{ form.end_date }}
+                        {% if form.end_date.errors %}
+                            <div class="text-danger small mt-1">{% for err in form.end_date.errors %}{{ err }} {% endfor %}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Status -->
+                    <div class="col-md-12">
+                        <label for="{{ form.status.id_for_label }}" class="form-label fw-semibold text-dark">حالة الموسم</label>
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                            <div class="text-danger small mt-1">{% for err in form.status.errors %}{{ err }} {% endfor %}</div>
+                        {% endif %}
+                        <small class="form-text text-muted d-block mt-1">
+                            <strong>القادم:</strong> للتحضير قبل التسجيل. 
+                            <strong>التسجيل متاح:</strong> يسمح للطلاب بالتسجيل فيه. 
+                            <strong>نشط:</strong> الدراسة مستمرة ولا يقبل مسجلين جدد. 
+                            <strong>مغلق/مؤرشف:</strong> موسم منتهي.
+                        </small>
+                    </div>
+
+                    <!-- Default Session Start Time -->
+                    <div class="col-md-6">
+                        <label for="{{ form.default_session_start_time.id_for_label }}" class="form-label fw-semibold text-dark">توقيت بدء الدوام الافتراضي</label>
+                        {{ form.default_session_start_time }}
+                        {% if form.default_session_start_time.errors %}
+                            <div class="text-danger small mt-1">{% for err in form.default_session_start_time.errors %}{{ err }} {% endfor %}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Default Session End Time -->
+                    <div class="col-md-6">
+                        <label for="{{ form.default_session_end_time.id_for_label }}" class="form-label fw-semibold text-dark">توقيت انتهاء الدوام الافتراضي</label>
+                        {{ form.default_session_end_time }}
+                        {% if form.default_session_end_time.errors %}
+                            <div class="text-danger small mt-1">{% for err in form.default_session_end_time.errors %}{{ err }} {% endfor %}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="col-12">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label fw-semibold text-dark">ملاحظات داخلية (اختياري)</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger small mt-1">{% for err in form.notes.errors %}{{ err }} {% endfor %}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Form Footer Actions (Save & Cancel) -->
+                <div class="d-flex justify-content-end gap-3 border-top pt-4">
+                    {% if form.instance.pk %}
+                        <a href="{% url 'seasons:detail' form.instance.pk %}" class="btn btn-outline-secondary px-4 py-2">
+                            <i class="bi bi-x-circle"></i> إلغاء والتراجع
+                        </a>
+                    {% else %}
+                        <a href="{% url 'seasons:list' %}" class="btn btn-outline-secondary px-4 py-2">
+                            <i class="bi bi-x-circle"></i> إلغاء والتراجع
+                        </a>
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary px-5 py-2 fw-semibold">
+                        <i class="bi bi-check-circle"></i> حفظ الموسم
+                    </button>
+                </div>
+            </form>
+        </article>
+    </div>
+</div>
+{% endblock %}

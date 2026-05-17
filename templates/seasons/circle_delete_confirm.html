@@ -1,0 +1,36 @@
+{% extends "base/base.html" %}
+
+{% block title %}فك ارتباط حلقة{% endblock %}
+{% block shell_title %}إزالة حلقة من الموسم{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <article class="nebras-card p-5 text-center shadow-sm border border-light-subtle rounded-3">
+            <div class="mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center bg-warning-subtle text-warning rounded-circle mb-3" style="width: 80px; height: 80px;">
+                    <i class="bi bi-link-45deg display-4"></i>
+                </div>
+                <h1 class="h3 fw-bold text-dark mb-2">فك ارتباط الحلقة</h1>
+                <p class="text-secondary small">هل أنت متأكد من رغبتك في إزالة حلقة <strong>"{{ object.circle.name_ar }}"</strong> من موسم <strong>"{{ object.season.title }}"</strong>؟</p>
+                <div class="alert alert-info text-start small mb-0">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <strong>ملاحظة:</strong> لن يتم حذف الحلقة الأساسية من النظام، بل سيتم فقط إزالتها من هذا الموسم الدراسي تحديداً.
+                </div>
+            </div>
+
+            <form method="post" class="m-0">
+                {% csrf_token %}
+                <div class="d-flex justify-content-center gap-3 border-top pt-4">
+                    <a href="{% url 'seasons:detail' object.season.pk %}" class="btn btn-outline-secondary px-4 py-2">
+                        <i class="bi bi-x-circle"></i> تراجع وعدم الإزالة
+                    </a>
+                    <button type="submit" class="btn btn-danger px-4 py-2">
+                        <i class="bi bi-x-square"></i> تأكيد فك الارتباط
+                    </button>
+                </div>
+            </form>
+        </article>
+    </div>
+</div>
+{% endblock %}

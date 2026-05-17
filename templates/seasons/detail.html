@@ -1,0 +1,188 @@
+{% extends "base/base.html" %}
+
+{% block title %}تفاصيل الموسم: {{ season.title }}{% endblock %}
+{% block shell_title %}إدارة الموسم{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{% url 'seasons:list' %}" class="text-decoration-none">المواسم</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ season.title }}</li>
+            </ol>
+        </nav>
+        <h1 class="h3 text-dark mb-0">{{ season.title }}</h1>
+    </div>
+    <div class="d-flex gap-2">
+        {% if request.user.role == 'admin' %}
+            <a href="{% url 'seasons:edit' season.pk %}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil-square"></i> تعديل الموسم
+            </a>
+            <a href="{% url 'seasons:delete' season.pk %}" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> حذف الموسم
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Season Stats and Details -->
+    <div class="col-xl-4 col-lg-5">
+        <article class="nebras-card p-4 mb-4 border border-light-subtle rounded-3 shadow-sm">
+            <h2 class="h5 fw-bold text-dark mb-3 border-bottom pb-2">بطاقة الموسم</h2>
+            <div class="d-flex flex-column gap-3 small text-secondary">
+                <div class="d-flex justify-content-between">
+                    <span class="fw-semibold">حالة الموسم:</span>
+                    {% if season.status == 'active' %}
+                        <span class="badge bg-success-subtle text-success">نشط</span>
+                    {% elif season.status == 'registration_open' %}
+                        <span class="badge bg-primary-subtle text-primary">التسجيل متاح</span>
+                    {% elif season.status == 'upcoming' %}
+                        <span class="badge bg-info-subtle text-info">قادم</span>
+                    {% elif season.status == 'closed' %}
+                        <span class="badge bg-secondary-subtle text-secondary">مغلق</span>
+                    {% else %}
+                        <span class="badge bg-dark-subtle text-dark">مؤرشف</span>
+                    {% endif %}
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="fw-semibold">الفترة:</span>
+                    <span>{{ season.start_date|date:"Y-m-d"|default:"-" }} إلى {{ season.end_date|date:"Y-m-d"|default:"-" }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="fw-semibold">دوام الحلقة:</span>
+                    <span>{{ season.default_session_start_time|time:"H:i" }} - {{ season.default_session_end_time|time:"H:i" }}</span>
+                </div>
+                {% if season.notes %}
+                    <div class="mt-2 p-3 bg-light rounded text-dark">
+                        <i class="bi bi-info-circle text-primary me-1"></i> {{ season.notes }}
+                    </div>
+                {% endif %}
+            </div>
+        </article>
+    </div>
+
+    <!-- Circles and Enrollments -->
+    <div class="col-xl-8 col-lg-7">
+        <!-- Assigned Circles Section -->
+        <article class="nebras-card p-4 mb-4 border border-light-subtle rounded-3 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                <h2 class="h5 fw-bold text-dark mb-0">الحلقات المربوطة بالموسم</h2>
+                {% if request.user.role == 'admin' %}
+                    <a href="{% url 'seasons:circle-create' season.pk %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-lg"></i> ربط حلقة جديدة
+                    </a>
+                {% endif %}
+            </div>
+            
+            {% if season_circles %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>اسم الحلقة</th>
+                                <th>الفئة</th>
+                                <th>المحفظ المسؤول</th>
+                                <th>السعة القصوى</th>
+                                {% if request.user.role == 'admin' %}
+                                    <th class="text-end">إجراءات</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sc in season_circles %}
+                                <tr>
+                                    <td>
+                                        <span class="fw-semibold text-dark">{{ sc.circle.name_ar }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info-subtle text-info">{{ sc.circle.get_gender_display }}</span>
+                                    </td>
+                                    <td>{{ sc.supervisor.full_name|default:"-" }}</td>
+                                    <td>{{ sc.capacity }} طالب</td>
+                                    {% if request.user.role == 'admin' %}
+                                        <td class="text-end">
+                                            <a href="{% url 'seasons:circle-delete' sc.pk %}" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-x-circle"></i> فك الارتباط
+                                            </a>
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-circle-square display-6 d-block mb-2 text-secondary opacity-50"></i>
+                    <p class="mb-0">لا توجد أي حلقات مربوطة بهذا الموسم حتى الآن.</p>
+                </div>
+            {% endif %}
+        </article>
+
+        <!-- Enrollments Section -->
+        <article class="nebras-card p-4 border border-light-subtle rounded-3 shadow-sm">
+            <h2 class="h5 fw-bold text-dark mb-3 border-bottom pb-2">سجل الطلاب المسجلين</h2>
+            
+            {% if enrollments %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>الطالب</th>
+                                <th>الحلقة المنضم لها</th>
+                                <th>حالة التسجيل</th>
+                                <th>تاريخ التسجيل</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for enroll in enrollments %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                {{ enroll.student.first_name|first|default:"-" }}
+                                            </div>
+                                            <div>
+                                                <span class="d-block fw-semibold text-dark">{{ enroll.student.full_name }}</span>
+                                                <small class="text-secondary">{{ enroll.student.username }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if enroll.season_circle %}
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                                {{ enroll.season_circle.circle.name_ar }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted small italic">لم يحدد حلقة بعد</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if enroll.status == 'active' %}
+                                            <span class="badge bg-success">معتمد</span>
+                                        {% elif enroll.status == 'pending' %}
+                                            <span class="badge bg-warning text-dark">قيد المراجعة</span>
+                                        {% elif enroll.status == 'withdrawn' %}
+                                            <span class="badge bg-secondary">منسحب</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">مستبعد</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small text-secondary">{{ enroll.enrolled_at|date:"Y-m-d" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-people display-6 d-block mb-2 text-secondary opacity-50"></i>
+                    <p class="mb-0">لا يوجد طلاب مسجلين في هذا الموسم حالياً.</p>
+                </div>
+            {% endif %}
+        </article>
+    </div>
+</div>
+{% endblock %}

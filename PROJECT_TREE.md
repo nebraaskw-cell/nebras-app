@@ -1,7 +1,7 @@
 # Halaqat Nebras Project Tree
 
 Updated after chat removal, WhatsApp scaffold, parent multi-student linking,
-report Excel exports, and demo-data seeding.
+report Excel exports, courses domain implementation, AI integration, and demo-data seeding.
 
 Generated/local files are intentionally excluded:
 
@@ -12,6 +12,7 @@ Generated/local files are intentionally excluded:
 - `db.sqlite3`
 - `media/` contents
 - `staticfiles/`
+- `backups/`
 
 ```text
 nebras-app/
@@ -66,6 +67,7 @@ nebras-app/
 |   |   |-- urls.py
 |   |   |-- views.py
 |   |   |-- migrations/
+|   |   |   |-- 0001_initial.py
 |   |   |   `-- __init__.py
 |   |   `-- services/
 |   |       |-- evaluation_service.py
@@ -98,6 +100,7 @@ nebras-app/
 |   |   |   |-- 0002_alter_cycle_end_date.py
 |   |   |   |-- 0003_enrollment.py
 |   |   |   |-- 0004_add_enrollment_withdrawal_audit.py
+|   |   |   |-- 0005_enrollment_removal_reason.py
 |   |   |   `-- __init__.py
 |   |   `-- services/
 |   |       |-- cycle_service.py
@@ -119,6 +122,25 @@ nebras-app/
 |   |   |-- migrations/
 |   |   |   `-- __init__.py
 |   |   `-- services/
+|   |       `-- __init__.py
+|   |-- courses/
+|   |   |-- admin.py
+|   |   |-- api_urls.py
+|   |   |-- apps.py
+|   |   |-- models.py
+|   |   |-- serializers.py
+|   |   |-- signals.py
+|   |   |-- tests.py
+|   |   |-- views.py
+|   |   |-- migrations/
+|   |   |   |-- 0001_initial.py
+|   |   |   `-- __init__.py
+|   |   `-- services/
+|   |       |-- certificate_service.py
+|   |       |-- course_service.py
+|   |       |-- enrollment_service.py
+|   |       |-- progress_service.py
+|   |       |-- query_service.py
 |   |       `-- __init__.py
 |   |-- gamification/
 |   |   |-- admin.py
@@ -195,7 +217,8 @@ nebras-app/
 |-- docs/
 |   |-- architecture.md
 |   |-- architecture-refactor.md
-|   `-- phase-1.md
+|   |-- phase-1.md
+|   `-- production-readiness.md
 |-- services/
 |   |-- archiving.py
 |   |-- backups.py
@@ -218,6 +241,8 @@ nebras-app/
     |   |-- register_complete.html
     |   |-- student_dashboard.html
     |   `-- teacher_dashboard.html
+    |-- admin/
+    |   `-- base_site.html
     |-- base/
     |   `-- base.html
     |-- circles/

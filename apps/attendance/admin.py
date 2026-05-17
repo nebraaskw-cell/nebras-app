@@ -7,5 +7,5 @@ from .models import AttendanceRecord
 class AttendanceRecordAdmin(admin.ModelAdmin):
     list_display = ("session", "student", "status", "marked_by", "marked_at")
     list_filter = ("status", "session__cycle__circle__gender", "session__cycle__circle__governorate")
-    search_fields = ("student__username", "student__email", "session__title", "session__cycle__title")
+    search_fields = ("student__username", "student__email", "session__title")
     autocomplete_fields = ("session", "student", "marked_by")

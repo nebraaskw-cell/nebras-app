@@ -11,7 +11,7 @@ class Session(SoftDeleteModel):
         CANCELLED = "cancelled", "Cancelled"
 
     cycle = models.ForeignKey(
-        "circles.Cycle",
+        "seasons.SeasonCircle",
         on_delete=models.PROTECT,
         related_name="sessions",
     )

@@ -6,14 +6,13 @@ Production-oriented Django + DRF educational platform for managing Sunnah memori
 
 This repository currently implements:
 
-- Phase 1 core: user roles, registration approval, circles, cycles, admin, template pages
-- Phase 2 delivery: sessions lifecycle, attendance flows, enrollment lifecycle, notifications APIs
-- Phase 3 delivery: chat domain, reporting dashboards/APIs, parent linking workflows
-- Phase 4 partial delivery: gamification, activity logs, archiving and backup utilities
-- Phase 5 delivery: AI assistant for Islamic educational guidance, AI evaluation for Sunnah memorization
+- **Phase 1 (Core Foundations):** User roles (Student, Teacher, Parent, Admin), registration approval pipelines, circle/cycle models, admin panels, and standard layout template pages.
+- **Phase 2 (Sessions & Attendance):** Study sessions lifecycle, automated attendance tracking workflows, enrollment lifecycle states, and notification backend APIs.
+- **Phase 3 (Reporting & Parent Portals):** Rich dashboard reporting (including Excel exports), multi-student parent linking workflows, and notification provider scaffolds.
+- **Phase 4 (Gamification, Backups, & Courses):** Gamification modules (points, level progression, badges), comprehensive audit logs, automated database backup scripts, cycle archiving snapshots, and the full Courses module with dynamic progress tracking and certificate generation.
+- **Phase 5 (AI Guidance & Evaluation):** AI Assistant for Islamic educational guidance and automated AI Evaluation of student recitation transcripts.
 
-The project is now in a **pre-production hardening stage** where reliability, UI consistency,
-test coverage, and operational readiness are the main priorities.
+The project is in its **pre-production hardening stage** where reliability, UI consistency, test coverage, and operational readiness are prioritized.
 
 ## Local Setup
 
@@ -24,21 +23,20 @@ pip install -r requirements.txt
 copy .env.example .env
 # Add OPENAI_API_KEY to .env for AI features
 python manage.py migrate
-python manage.py createsuperuser
+python manage.py seed_demo_data
 python manage.py runserver
 ```
 
 Open:
 
-- Web: http://127.0.0.1:8000/
-- Admin: http://127.0.0.1:8000/admin/
-- API health: http://127.0.0.1:8000/api/v1/health/
+- Web: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+- Admin: [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/)
+- API health: [http://127.0.0.1:8000/api/v1/health/](http://127.0.0.1:8000/api/v1/health/)
 
 ## Phase Roadmap
 
-1. Phase 1: Users, roles, circles, cycles, basic auth, admin. (implemented)
-2. Phase 2: Sessions, attendance, enrollment, notifications. (implemented)
-3. Phase 3: Global chat, reports, parent linking. (implemented)
-4. Phase 4: Archiving snapshots, gamification, activity logs, backups. (partially implemented)
-5. Phase 5: AI service structure only. (scaffolded)
-
+1. **Phase 1: Users, roles, circles, cycles, basic auth, admin.** (implemented)
+2. **Phase 2: Sessions, attendance, enrollment, notifications.** (implemented)
+3. **Phase 3: Reports, parent linking, notifications.** (implemented)
+4. **Phase 4: Snapshot archiving, gamification, activity logs, database backups, and courses.** (implemented)
+5. **Phase 5: AI assistant & AI evaluation integration.** (implemented)

@@ -5,8 +5,8 @@ from django.test import TestCase
 from apps.accounts.models import User
 from apps.attendance.models import AttendanceRecord
 from apps.attendance.services.attendance_service import mark_attendance
-from apps.circles.models import Circle, Cycle, Enrollment
-from apps.circles.services.cycle_service import calculate_cycle_end_date
+from apps.circles.models import Circle
+from apps.seasons.models import Season, SeasonCircle, Enrollment
 from apps.study_sessions.models import Session
 
 
@@ -38,21 +38,25 @@ class AttendanceServiceTests(TestCase):
             name_ar="الدائرة ج",
             gender="male",
             governorate="capital",
-            mosque_name="Al-Salam Mosque",
             teacher=self.teacher,
-            is_active=True,
+            status=Circle.Status.OPEN,
         )
-        self.cycle = Cycle.objects.create(
-            circle=self.circle,
+        self.season = Season.objects.create(
             title="Evening Tajweed",
             start_date=date.today(),
-            end_date=calculate_cycle_end_date(date.today()),
-            status=Cycle.Status.ACTIVE,
+            end_date=date.today() + date.resolution * 90,
+            status=Season.Status.ACTIVE,
+        )
+        self.cycle = SeasonCircle.objects.create(
+            season=self.season,
+            circle=self.circle,
+            supervisor=self.teacher,
+            capacity=25,
         )
         self.session = Session.objects.create(
             cycle=self.cycle,
             title="Attendance Session",
-            date=self.cycle.start_date,
+            date=self.season.start_date,
             start_time=time(16, 0),
             end_time=time(18, 0),
             status=Session.Status.ACTIVE,
@@ -61,11 +65,12 @@ class AttendanceServiceTests(TestCase):
     def test_mark_attendance_rejects_when_teacher_is_not_assigned(self):
         Enrollment.objects.create(
             student=self.student,
-            cycle=self.cycle,
+            season=self.season,
+            season_circle=self.cycle,
             status=Enrollment.Status.ACTIVE,
         )
 
-        with self.assertRaisesMessage(ValueError, "assigned teacher"):
+        with self.assertRaisesMessage(ValueError, "not the assigned teacher"):
             mark_attendance(
                 session=self.session,
                 student=self.student,
@@ -74,7 +79,7 @@ class AttendanceServiceTests(TestCase):
             )
 
     def test_mark_attendance_rejects_when_student_is_not_enrolled(self):
-        with self.assertRaisesMessage(ValueError, "active enrollment"):
+        with self.assertRaisesMessage(ValueError, "does not have an active enrollment"):
             mark_attendance(
                 session=self.session,
                 student=self.student,

@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "django_filters",
     "apps.core.apps.CoreConfig",
     "apps.accounts.apps.AccountsConfig",
+    "apps.seasons.apps.SeasonsConfig",
     "apps.circles.apps.CirclesConfig",
     "apps.courses.apps.CoursesConfig",
     "apps.study_sessions.apps.StudySessionsConfig",

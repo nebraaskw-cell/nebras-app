@@ -1,0 +1,97 @@
+{% extends "base/base.html" %}
+
+{% block title %}إدارة المواسم الأكاديمية{% endblock %}
+{% block shell_title %}المواسم الدراسية{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 text-dark mb-1">المواسم الأكاديمية</h1>
+        <p class="text-secondary mb-0">أنشئ واستعرض مواسم التسجيل وفترات الدراسة الخاصة بمدرسة نبراس.</p>
+    </div>
+    {% if request.user.role == 'admin' %}
+        <a href="{% url 'seasons:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> إضافة موسم جديد
+        </a>
+    {% endif %}
+</div>
+
+<div class="row g-4">
+    {% for season in seasons %}
+        <div class="col-md-6 col-xl-4">
+            <article class="nebras-card h-100 p-4 border border-light-subtle rounded-3 shadow-sm hover-shadow transition d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h2 class="h5 fw-bold text-dark mb-1">{{ season.title }}</h2>
+                        <small class="text-secondary">تم الإنشاء: {{ season.created_at|date:"Y-m-d" }}</small>
+                    </div>
+                    {% if season.status == 'active' %}
+                        <span class="badge bg-success-subtle text-success px-2 py-1">نشط</span>
+                    {% elif season.status == 'registration_open' %}
+                        <span class="badge bg-primary-subtle text-primary px-2 py-1">التسجيل متاح</span>
+                    {% elif season.status == 'upcoming' %}
+                        <span class="badge bg-info-subtle text-info px-2 py-1">قادم</span>
+                    {% elif season.status == 'closed' %}
+                        <span class="badge bg-secondary-subtle text-secondary px-2 py-1">مغلق</span>
+                    {% else %}
+                        <span class="badge bg-dark-subtle text-dark px-2 py-1">مؤرشف</span>
+                    {% endif %}
+                </div>
+
+                {% if season.notes %}
+                    <p class="text-secondary small mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        {{ season.notes }}
+                    </p>
+                {% else %}
+                    <p class="text-muted small mb-3 flex-grow-1 italic">لا توجد ملاحظات إضافية لهذا الموسم.</p>
+                {% endif %}
+
+                <div class="info-list small text-secondary d-flex flex-column gap-2 mb-4 border-top pt-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-calendar-event text-primary"></i>
+                        <span>البداية: <strong>{{ season.start_date|date:"Y-m-d"|default:"غير محدد" }}</strong></span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-calendar-check text-success"></i>
+                        <span>النهاية: <strong>{{ season.end_date|date:"Y-m-d"|default:"غير محدد" }}</strong></span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-clock-history text-warning"></i>
+                        <span>التوقيت الافتراضي للدوام: <strong>{{ season.default_session_start_time|time:"H:i" }} - {{ season.default_session_end_time|time:"H:i" }}</strong></span>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-auto">
+                    <a href="{% url 'seasons:detail' season.pk %}" class="btn btn-sm btn-primary flex-grow-1">
+                        <i class="bi bi-grid"></i> تفاصيل الموسم وإدارته
+                    </a>
+                    {% if request.user.role == 'admin' %}
+                        <a href="{% url 'seasons:edit' season.pk %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil-square"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </article>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            {% include "components/empty_state.html" with icon="bi-calendar-x" title="لا توجد مواسم أكاديمية" message="يمكن لمدير النظام إنشاء موسم جديد لفتح باب التسجيل وإدراج الحلقات." %}
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+    <nav class="mt-4" aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">السابق</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">التالي</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}

@@ -12,13 +12,13 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r'courses', CourseViewSet)
-router.register(r'modules', CourseModuleViewSet)
-router.register(r'lessons', LessonViewSet)
-router.register(r'enrollments', CourseEnrollmentViewSet)
-router.register(r'lesson-completions', LessonCompletionViewSet)
-router.register(r'module-completions', ModuleCompletionViewSet)
-router.register(r'certificates', CertificateViewSet)
+router.register(r'courses', CourseViewSet, basename='courses')
+router.register(r'modules', CourseModuleViewSet, basename='modules')
+router.register(r'lessons', LessonViewSet, basename='lessons')
+router.register(r'enrollments', CourseEnrollmentViewSet, basename='enrollments')
+router.register(r'lesson-completions', LessonCompletionViewSet, basename='lesson-completions')
+router.register(r'module-completions', ModuleCompletionViewSet, basename='module-completions')
+router.register(r'certificates', CertificateViewSet, basename='certificates')
 
 urlpatterns = [
     path('', include(router.urls)),

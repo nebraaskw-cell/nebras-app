@@ -13,6 +13,7 @@ from apps.core.views import HealthCheckAPIView, HomeView
 from apps.courses import api_urls as courses_api_urls
 from apps.notifications import api_urls as notifications_api_urls
 from apps.reports import api_urls as reports_api_urls
+from apps.seasons import api_urls as seasons_api_urls
 from apps.study_sessions import api_urls as sessions_api_urls
 
 urlpatterns = [
@@ -22,9 +23,11 @@ urlpatterns = [
     path("auth/login/", auth_views.LoginView.as_view(template_name="accounts/login.html"), name="login"),
     path("auth/logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("circles/", include("apps.circles.urls")),
+    path("seasons/", include("apps.seasons.urls")),
     path("reports/", include("apps.reports.urls")),
     path("api/v1/health/", HealthCheckAPIView.as_view(), name="api-health"),
     path("api/v1/accounts/", include((accounts_api_urls.urlpatterns, "accounts-api"), namespace="accounts-api")),
+    path("api/v1/seasons/", include((seasons_api_urls.urlpatterns, "seasons-api"), namespace="seasons-api")),
     path("api/v1/circles/", include((circles_api_urls.urlpatterns, "circles-api"), namespace="circles-api")),
     path("api/v1/sessions/", include((sessions_api_urls.urlpatterns, "sessions-api"), namespace="sessions-api")),
     path("api/v1/attendance/", include((attendance_api_urls.urlpatterns, "attendance-api"), namespace="attendance-api")),

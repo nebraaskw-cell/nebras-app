@@ -1,86 +1,103 @@
 {% extends "base/base.html" %}
 
-{% block title %}الحلقات{% endblock %}
-{% block shell_title %}الحلقات{% endblock %}
+{% block title %}إدارة الحلقات{% endblock %}
+{% block shell_title %}حلقات مدرسة نبراس{% endblock %}
 
 {% block content %}
-{% include "components/page_header.html" with eyebrow="الحلقات" title="الحلقات المتاحة" subtitle="استعرض الحلقات الدائمة ومواقعها والمعلمين المسؤولين عنها." %}
-<div class="row g-3">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 text-dark mb-1">أعمدة مدرسة نبراس (الحلقات)</h1>
+        <p class="text-secondary mb-0">استعرض وأنشئ الحلقات الفردية الدائمة وتفاصيل المعلمين والتواريخ المعتمدة.</p>
+    </div>
+    {% if request.user.is_authenticated and request.user.role == 'admin' %}
+        <a href="{% url 'circles:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> إضافة حلقة جديدة
+        </a>
+    {% endif %}
+</div>
+
+<div class="row g-4">
     {% for circle in circles %}
         <div class="col-md-6 col-xl-4">
-            <article class="nebras-card circle-card p-4 h-100">
-                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-                    <div>
-                        <h2 class="h5 mb-1">{{ circle.name_ar }}</h2>
-                        <p class="text-secondary mb-0">{{ circle.name }}</p>
+            <article class="nebras-card circle-card h-100 d-flex flex-column border border-light-subtle rounded-3 overflow-hidden shadow-sm hover-shadow transition">
+                <!-- Image or Gradient Header -->
+                {% if circle.image %}
+                    <div class="circle-card-image" style="height: 160px; background: url('{{ circle.image.url }}') center/cover no-repeat;">
                     </div>
-                    <span class="status-chip active">نشطة</span>
-                </div>
-                <div class="info-list">
-                    <div><i class="bi bi-building"></i><span>{{ circle.mosque_name }}</span></div>
-                    <div><i class="bi bi-geo-alt"></i><span>{{ circle.get_governorate_display }}</span></div>
-                    <div><i class="bi bi-person-badge"></i><span>{{ circle.teacher.full_name|default:"غير محدد" }}</span></div>
-                </div>
-                {% if circle.active_cycles %}
-                    <div class="mt-3">
-                        <h6 class="text-muted mb-2">الدورات النشطة:</h6>
-                        <div class="d-flex flex-column gap-2">
-                            {% for cycle in circle.active_cycles %}
-                                <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
-                                    <div>
-                                        <strong>{{ cycle.title }}</strong>
-                                        <small class="d-block text-muted">{{ cycle.start_date }} - {{ cycle.end_date }}</small>
-                                    </div>
-                                    {% if user.is_authenticated and user.role == 'student' and user.registration_status == 'approved' %}
-                                        <button class="btn btn-sm btn-primary enroll-btn" data-cycle-id="{{ cycle.id }}">
-                                            <i class="bi bi-plus-circle"></i> التسجيل
-                                        </button>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
-                        </div>
+                {% else %}
+                    <div class="circle-card-image d-flex align-items-center justify-content-center" style="height: 160px; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                        <span class="text-white fw-bold display-4">{{ circle.name_ar|slice:":1" }}</span>
                     </div>
                 {% endif %}
+
+                <!-- Content Body -->
+                <div class="p-4 flex-grow-1 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                        <div>
+                            <h2 class="h5 fw-bold text-dark mb-1">{{ circle.name_ar }}</h2>
+                            <small class="text-muted text-uppercase fw-semibold">{{ circle.name }}</small>
+                        </div>
+                        {% if circle.status == 'open' %}
+                            <span class="badge bg-success-subtle text-success px-2 py-1">مفتوحة</span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary px-2 py-1">مغلقة</span>
+                        {% endif %}
+                    </div>
+
+                    {% if circle.description %}
+                        <p class="text-secondary small mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                            {{ circle.description }}
+                        </p>
+                    {% else %}
+                        <p class="text-muted small mb-3 flex-grow-1 italic">لا توجد معلومات إضافية لهذه الحلقة.</p>
+                    {% endif %}
+
+                    <!-- Detail Fields -->
+                    <div class="info-list small text-secondary d-flex flex-column gap-2 mb-3 border-top pt-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-geo-alt-fill text-primary"></i>
+                            <span>المحافظة: <strong>{{ circle.get_governorate_display }}</strong></span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-person-fill text-info"></i>
+                            <span>الفئة: <strong>{{ circle.get_gender_display }}</strong></span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-person-badge-fill text-warning"></i>
+                            <span>المحفظ: <strong>{{ circle.teacher.full_name|default:"غير محدد" }}</strong></span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-calendar3 text-success"></i>
+                            <span>من <strong>{{ circle.start_date|default:"-" }}</strong> إلى <strong>{{ circle.end_date|default:"-" }}</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Admin Actions -->
+                    {% if request.user.is_authenticated and request.user.role == 'admin' %}
+                        <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-auto gap-2">
+                            <a href="{% url 'circles:edit' circle.pk %}" class="btn btn-sm btn-outline-primary flex-grow-1">
+                                <i class="bi bi-pencil-square"></i> تعديل
+                            </a>
+                            
+                            <form method="post" action="{% url 'circles:clone' circle.pk %}" class="d-inline flex-grow-1 m-0" onsubmit="return confirm('هل تريد نسخ هذه الحلقة بالكامل؟');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-success w-100">
+                                    <i class="bi bi-copy"></i> نسخ مطابقة
+                                </button>
+                            </form>
+                            
+                            <a href="{% url 'circles:delete' circle.pk %}" class="btn btn-sm btn-outline-danger flex-grow-1">
+                                <i class="bi bi-trash"></i> حذف
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
             </article>
         </div>
     {% empty %}
         <div class="col-12">
-            {% include "components/empty_state.html" with icon="bi-collection" title="لا توجد حلقات بعد" message="عند إضافة الحلقات من لوحة الإدارة ستظهر هنا للزوار والمستخدمين." %}
+            {% include "components/empty_state.html" with icon="bi-collection" title="لا توجد حلقات مسجلة بعد" message="يمكن لمدير النظام إنشاء حلقات صحابة جديدة من الزر المخصص بالصفحة." %}
         </div>
     {% endfor %}
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.enroll-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const cycleId = this.dataset.cycleId;
-            if (confirm('هل تريد التسجيل في هذه الدورة؟')) {
-                fetch('/api/v1/circles/enrollments/student_enroll/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({ cycle_id: cycleId })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.detail) {
-                        alert(data.detail);
-                    } else {
-                        alert('تم التسجيل بنجاح! انتظر موافقة المعلم.');
-                        location.reload();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('حدث خطأ أثناء التسجيل.');
-                });
-            }
-        });
-    });
-});
-</script>
 {% endblock %}
-

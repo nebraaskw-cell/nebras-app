@@ -96,7 +96,7 @@ class CourseAPITest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Should only see active courses
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(response.data['results']), 1)
 
     def test_course_enroll_student(self):
         """Test student enrollment in course."""

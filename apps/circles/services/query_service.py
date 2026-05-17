@@ -1,4 +1,4 @@
-from apps.circles.models import Circle, Cycle
+from apps.circles.models import Circle
 
 
 def get_circles():
@@ -7,8 +7,3 @@ def get_circles():
 
 def get_active_circles():
     return get_circles().filter(is_active=True)
-
-
-def get_cycles():
-    return Cycle.objects.select_related("circle", "circle__teacher")
-

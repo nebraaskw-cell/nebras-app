@@ -32,6 +32,9 @@
                     <a class="nav-pill {% if request.resolver_match.app_name == 'circles' %}active{% endif %}" href="{% url 'circles:list' %}">
                         <i class="bi bi-collection"></i><span>الحلقات والدورات</span>
                     </a>
+                    <a class="nav-pill {% if request.resolver_match.app_name == 'seasons' %}active{% endif %}" href="{% if request.user.role == 'student' %}{% url 'seasons:available' %}{% else %}{% url 'seasons:list' %}{% endif %}">
+                        <i class="bi bi-calendar-event"></i><span>المواسم والتسجيل</span>
+                    </a>
                     <a class="nav-pill {% if request.resolver_match.app_name == 'reports' %}active{% endif %}" href="{% url 'reports:dashboard' %}">
                         <i class="bi bi-bar-chart"></i><span>التقارير</span>
                     </a>
@@ -87,7 +90,7 @@
                     <div class="collapse navbar-collapse" id="mainNav">
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                             <li class="nav-item"><a class="nav-link" href="{% url 'circles:list' %}">الحلقات</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'circles:cycles' %}">الدورات</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'seasons:available' %}">التسجيل والمواسم</a></li>
                         </ul>
                         <div class="d-flex gap-2">
                             <a class="btn btn-outline-secondary btn-sm" href="{% url 'login' %}">دخول</a>

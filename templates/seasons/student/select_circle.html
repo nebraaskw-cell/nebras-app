@@ -1,0 +1,82 @@
+{% extends "base/base.html" %}
+
+{% block title %}اختيار الحلقة - {{ enrollment.season.title }}{% endblock %}
+{% block shell_title %}استكمال التسجيل{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="text-center mb-5">
+            <h1 class="h3 fw-bold text-dark mb-2">استكمال إجراءات التسجيل</h1>
+            <p class="text-secondary">لقد قمت باختيار <strong>{{ enrollment.season.title }}</strong> بنجاح. يرجى الآن اختيار الحلقة (الفصل) الذي ترغب بالانضمام إليه.</p>
+        </div>
+
+        <form method="post" action="{% url 'seasons:student-select-circle' enrollment.pk %}">
+            {% csrf_token %}
+            
+            <div class="row g-4 mb-4">
+                {% for sc in available_circles %}
+                    <div class="col-md-6">
+                        <!-- Custom Radio Card -->
+                        <label class="w-100 cursor-pointer">
+                            <input type="radio" name="season_circle_id" value="{{ sc.pk }}" class="d-none peer-radio" required>
+                            <div class="nebras-card p-4 h-100 border rounded-3 text-center transition radio-card-content hover-border-primary">
+                                <!-- Check Icon Overlay (hidden by default, shown via CSS when checked) -->
+                                <div class="check-icon text-primary mb-2 d-none">
+                                    <i class="bi bi-check-circle-fill display-6"></i>
+                                </div>
+                                <div class="uncheck-icon text-muted mb-2 opacity-50">
+                                    <i class="bi bi-circle display-6"></i>
+                                </div>
+                                
+                                <h3 class="h5 fw-bold text-dark mt-2 mb-1">{{ sc.circle.name_ar }}</h3>
+                                <div class="text-secondary small d-flex flex-column gap-1 mt-3">
+                                    <span><i class="bi bi-geo-alt-fill text-primary"></i> {{ sc.circle.get_governorate_display }}</span>
+                                    <span><i class="bi bi-person-badge-fill text-warning"></i> المحفظ: {{ sc.supervisor.full_name|default:"جاري التعيين" }}</span>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-warning text-center p-4">
+                            <i class="bi bi-exclamation-circle display-4 d-block mb-3 text-warning"></i>
+                            <h4 class="h5 fw-bold text-dark">لا توجد حلقات متاحة حالياً</h4>
+                            <p class="mb-0 text-secondary">عذراً، لا توجد حلقات شاغرة تناسب فئتك في هذا الموسم حتى الآن. يرجى مراجعة الإدارة.</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% if available_circles %}
+                <div class="d-flex justify-content-center">
+                    <button type="submit" class="btn btn-primary btn-lg px-5 fw-semibold shadow-sm rounded-pill">
+                        <i class="bi bi-check2-all"></i> تأكيد الانضمام للحلقة
+                    </button>
+                </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<style>
+/* Custom Radio Card Styling */
+.peer-radio:checked + .radio-card-content {
+    border-color: var(--bs-primary) !important;
+    background-color: rgba(var(--bs-primary-rgb), 0.03);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+}
+.peer-radio:checked + .radio-card-content .check-icon {
+    display: block !important;
+}
+.peer-radio:checked + .radio-card-content .uncheck-icon {
+    display: none !important;
+}
+.hover-border-primary:hover {
+    border-color: rgba(var(--bs-primary-rgb), 0.5) !important;
+}
+.cursor-pointer {
+    cursor: pointer;
+}
+</style>
+{% endblock %}

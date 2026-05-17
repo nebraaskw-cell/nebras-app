@@ -3,7 +3,7 @@ import logging
 from django.db.models import Count, Q
 
 from apps.attendance.models import AttendanceRecord
-from apps.circles.models import Enrollment
+from apps.seasons.models import Enrollment
 from apps.study_sessions.models import Session
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ def _validate_teacher_owns_session(session, marked_by):
     if getattr(marked_by, "is_admin_role", False):
         return  # Admins can always mark attendance
 
-    circle_teacher = getattr(session.cycle.circle, "teacher", None)
+    circle_teacher = getattr(session.cycle, "supervisor", None)
 
     if circle_teacher is None:
         raise ValueError(
@@ -47,12 +47,12 @@ def _validate_teacher_owns_session(session, marked_by):
 
 def _validate_student_enrolled(session, student):
     """
-    The student must have an ACTIVE enrollment in the session's cycle.
+    The student must have an ACTIVE enrollment in the session's circle.
     Raises ValueError otherwise.
     """
     is_enrolled = Enrollment.objects.filter(
         student=student,
-        cycle=session.cycle,
+        season_circle=session.cycle,
         status=Enrollment.Status.ACTIVE,
     ).exists()
 

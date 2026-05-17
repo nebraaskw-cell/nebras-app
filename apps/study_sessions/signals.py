@@ -1,23 +1,30 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from apps.circles.models import Cycle, Enrollment
+from apps.seasons.models import Season, SeasonCircle, Enrollment
 from apps.study_sessions.models import Session
 
 
-@receiver(post_save, sender=Cycle)
-def on_active_cycle_saved(sender, instance, created, **kwargs):
-    if instance.status == Cycle.Status.ACTIVE:
+@receiver(post_save, sender=SeasonCircle)
+def on_active_season_circle_saved(sender, instance, created, **kwargs):
+    if instance.season.status == Season.Status.ACTIVE:
         from apps.study_sessions.services.session_service import generate_sessions_for_cycle
-
         generate_sessions_for_cycle(instance)
+
+
+@receiver(post_save, sender=Season)
+def on_season_status_active(sender, instance, created, **kwargs):
+    if instance.status == Season.Status.ACTIVE:
+        from apps.study_sessions.services.session_service import generate_sessions_for_cycle
+        for sc in SeasonCircle.objects.filter(season=instance):
+            generate_sessions_for_cycle(sc)
 
 
 @receiver(post_save, sender=Session)
 def on_session_activated(sender, instance, created, **kwargs):
     """
     When a session becomes ACTIVE, notify all enrolled students
-    in that cycle.
+    in that circle.
     """
     if created:
         return
@@ -25,7 +32,7 @@ def on_session_activated(sender, instance, created, **kwargs):
         from apps.notifications.services.notification_service import notify
 
         enrollments = Enrollment.objects.filter(
-            cycle=instance.cycle,
+            season_circle=instance.cycle,
             status="active",
         ).select_related("student")
         for enrollment in enrollments:

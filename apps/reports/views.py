@@ -69,13 +69,13 @@ class ReportsDashboardView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         
         if user.role == User.Roles.ADMIN:
-            context["circles"] = Circle.objects.filter(is_active=True)
+            context["circles"] = Circle.objects.filter(status="open")
             context["students"] = User.objects.filter(role=User.Roles.STUDENT)
         elif user.role == User.Roles.TEACHER:
-            context["circles"] = Circle.objects.filter(teacher=user, is_active=True)
+            context["circles"] = Circle.objects.filter(season_circles__supervisor=user, status="open").distinct()
             context["students"] = User.objects.filter(
                 role=User.Roles.STUDENT,
-                enrollments__cycle__circle__teacher=user,
+                enrollments__season_circle__supervisor=user,
                 enrollments__status="active"
             ).distinct()
         elif user.role == User.Roles.PARENT:
@@ -95,7 +95,7 @@ class CircleReportAPIView(APIView):
 
     def get(self, request, pk):
         circle = generics.get_object_or_404(Circle, pk=pk)
-        if request.user.role == User.Roles.TEACHER and circle.teacher != request.user:
+        if request.user.role == User.Roles.TEACHER and not circle.season_circles.filter(supervisor=request.user).exists():
             return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
             
         data = generation_service.generate_circle_detail_report(circle)
@@ -115,7 +115,7 @@ class StudentPerformanceAPIView(APIView):
         if request.user.is_admin_role:
             can_view = True
         elif request.user.is_teacher_role:
-            if student.enrollments.filter(cycle__circle__teacher=request.user, status="active").exists():
+            if student.enrollments.filter(season_circle__supervisor=request.user, status="active").exists():
                 can_view = True
         elif request.user.role == User.Roles.PARENT:
             if ParentProfile.objects.filter(parent=request.user, student=student, status=ParentProfile.Status.APPROVED).exists():
@@ -145,7 +145,7 @@ class CircleReportExcelAPIView(APIView):
 
     def get(self, request, pk):
         circle = generics.get_object_or_404(Circle, pk=pk)
-        if request.user.role == User.Roles.TEACHER and circle.teacher != request.user:
+        if request.user.role == User.Roles.TEACHER and not circle.season_circles.filter(supervisor=request.user).exists():
             return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
 
         data = generation_service.generate_circle_detail_report(circle)
@@ -181,7 +181,7 @@ class StudentPerformanceExcelAPIView(APIView):
             can_view = True
         elif request.user.is_teacher_role:
             can_view = student.enrollments.filter(
-                cycle__circle__teacher=request.user,
+                season_circle__supervisor=request.user,
                 status="active",
             ).exists()
         elif request.user.role == User.Roles.PARENT:
