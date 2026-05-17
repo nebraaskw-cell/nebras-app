@@ -10,6 +10,7 @@ from apps.ai_evaluation import api_urls as ai_evaluation_api_urls
 from apps.attendance import api_urls as attendance_api_urls
 from apps.circles import api_urls as circles_api_urls
 from apps.core.views import HealthCheckAPIView, HomeView
+from apps.courses import api_urls as courses_api_urls
 from apps.notifications import api_urls as notifications_api_urls
 from apps.reports import api_urls as reports_api_urls
 from apps.study_sessions import api_urls as sessions_api_urls
@@ -32,6 +33,7 @@ urlpatterns = [
         include((notifications_api_urls.urlpatterns, "notifications-api"), namespace="notifications-api"),
     ),
     path("api/v1/reports/", include((reports_api_urls.urlpatterns, "reports-api"), namespace="reports-api")),
+    path("api/v1/courses/", include((courses_api_urls.urlpatterns, "courses-api"), namespace="courses-api")),
     path(
         "api/v1/ai/assistant/",
         include((ai_assistant_api_urls.urlpatterns, "ai-assistant-api"), namespace="ai-assistant-api"),

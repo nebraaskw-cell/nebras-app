@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "apps.core.apps.CoreConfig",
     "apps.accounts.apps.AccountsConfig",
     "apps.circles.apps.CirclesConfig",
+    "apps.courses.apps.CoursesConfig",
     "apps.study_sessions.apps.StudySessionsConfig",
     "apps.attendance.apps.AttendanceConfig",
     "apps.notifications.apps.NotificationsConfig",
